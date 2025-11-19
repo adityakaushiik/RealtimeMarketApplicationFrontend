@@ -1,6 +1,6 @@
-import {create} from 'zustand';
-import {persist} from 'zustand/middleware';
-import type {UnpackedData} from "../utils/utils.ts";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { UnpackedData } from "./utils/utils.ts";
 
 interface DataState {
     data: Record<string, UnpackedData[]>; // Store arrays of ticks per symbol
@@ -38,7 +38,7 @@ export const useDataStore = create<DataState>()(
 
                     // Append new tick to the array
                     return {
-                        data: {...state.data, [key]: [...dataArray, value]},
+                        data: { ...state.data, [key]: [...dataArray, value] },
                     };
                 });
             },
@@ -49,14 +49,14 @@ export const useDataStore = create<DataState>()(
 
             clearData: (key: string) => {
                 set((state) => {
-                    const newData = {...state.data};
+                    const newData = { ...state.data };
                     delete newData[key];
-                    return {data: newData};
+                    return { data: newData };
                 });
             },
 
             clearAllData: () => {
-                set({data: {}});
+                set({ data: {} });
             },
 
         }),
