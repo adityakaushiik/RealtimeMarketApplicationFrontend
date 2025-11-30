@@ -1,6 +1,8 @@
+import { useNavigate } from "react-router-dom";
 import {
     Sidebar,
     SidebarContent,
+    SidebarFooter,
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
@@ -14,8 +16,12 @@ import {
     PieChart,
     Server,
     Settings,
+    LogOut,
+    User,
 } from "lucide-react"
 import { Link } from "react-router-dom"
+import { ApiService } from "@/shared/services/apiService";
+import { Separator } from "@/components/ui/separator";
 
 // Menu items.
 const items = [
@@ -47,6 +53,14 @@ const items = [
 ]
 
 export function AppSidebar() {
+    const navigate = useNavigate();
+    const currentUser = ApiService.getCurrentUser();
+
+    const handleLogout = () => {
+        ApiService.logout();
+        navigate("/login");
+    };
+
     return (
         <Sidebar collapsible="icon">
             <SidebarContent>
@@ -68,6 +82,28 @@ export function AppSidebar() {
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
+
+            <SidebarFooter>
+                <Separator className="mb-2" />
+                <SidebarMenu>
+                    {currentUser && (
+                        <SidebarMenuItem>
+                            <div className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
+                                <User className="h-4 w-4 shrink-0" />
+                                <span className="truncate group-data-[collapsible=icon]:hidden">
+                                    {currentUser.email}
+                                </span>
+                            </div>
+                        </SidebarMenuItem>
+                    )}
+                    <SidebarMenuItem>
+                        <SidebarMenuButton onClick={handleLogout} tooltip="Logout">
+                            <LogOut />
+                            <span className="text-base">Logout</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarFooter>
         </Sidebar>
     )
 }

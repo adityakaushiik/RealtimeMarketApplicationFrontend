@@ -1,11 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { UnpackedData } from "./utils/utils.ts";
+import type { SnapshotWebsocketMessage, UpdateWebsocketMessage } from '../utils/utils';
+
+export type MarketData = SnapshotWebsocketMessage | UpdateWebsocketMessage;
 
 interface DataState {
-    data: Record<string, UnpackedData[]>; // Store arrays of ticks per symbol
-    saveData: (key: string, value: UnpackedData) => void;
-    getData: (key: string) => UnpackedData[];
+    data: Record<string, MarketData[]>; // Store arrays of ticks per symbol
+    saveData: (key: string, value: MarketData) => void;
+    getData: (key: string) => MarketData[];
     clearData: (key: string) => void;
     clearAllData: () => void;
 }
@@ -18,12 +20,12 @@ export const useDataStore = create<DataState>()(
 
             data: {},
 
-            saveData: (key: string, value: UnpackedData) => {
+            saveData: (key: string, value: MarketData) => {
                 set((state) => {
                     const existingData = state.data[key];
 
                     // Handle migration: if existingData is not an array (old format), start fresh with new array
-                    let dataArray: UnpackedData[];
+                    let dataArray: MarketData[];
                     if (!existingData) {
                         // No data yet, create new array
                         dataArray = [];
@@ -33,7 +35,7 @@ export const useDataStore = create<DataState>()(
                     } else {
                         // Old format (single object), convert to array with that single item
                         console.warn(`Migrating old data format for ${key} - converting single object to array`);
-                        dataArray = [existingData as UnpackedData];
+                        dataArray = [existingData as MarketData];
                     }
 
                     // Append new tick to the array
@@ -43,7 +45,7 @@ export const useDataStore = create<DataState>()(
                 });
             },
 
-            getData: (key: string): UnpackedData[] => {
+            getData: (key: string): MarketData[] => {
                 return get().data[key] || [];
             },
 
@@ -68,17 +70,17 @@ export const useDataStore = create<DataState>()(
                 if (version < 2) {
                     console.log('🔄 Migrating data storage from v' + version + ' to v2 (array format)');
                     const oldState = persistedState as { data: Record<string, unknown> };
-                    const newData: Record<string, UnpackedData[]> = {};
+                    const newData: Record<string, MarketData[]> = {};
 
                     // Convert each symbol's data to an array
                     Object.entries(oldState.data || {}).forEach(([key, value]) => {
                         if (value && typeof value === 'object') {
                             // If it's already an array, keep it
                             if (Array.isArray(value)) {
-                                newData[key] = value as UnpackedData[];
+                                newData[key] = value as MarketData[];
                             } else {
                                 // Convert single object to array with one item
-                                newData[key] = [value as UnpackedData];
+                                newData[key] = [value as MarketData];
                             }
                         }
                     });
@@ -94,7 +96,7 @@ export const useDataStore = create<DataState>()(
 
 // Service class wrapper for easier usage
 export class DataService {
-    static saveData(key: string, value: UnpackedData) {
+    static saveData(key: string, value: MarketData) {
         useDataStore.getState().saveData(key, value);
     }
 

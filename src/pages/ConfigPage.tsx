@@ -1,5 +1,3 @@
-import React from 'react';
-
 export const ConfigPage = () => {
     return (
         <div className="p-6">

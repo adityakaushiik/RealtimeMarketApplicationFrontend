@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
     Card,
     CardContent,
@@ -14,59 +15,65 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Activity, BarChart3, DollarSign, TrendingUp } from "lucide-react";
-
-// Mock data for the table
-const stockList = [
-    {
-        symbol: "AAPL",
-        name: "Apple Inc.",
-        price: "182.52",
-        change: "+1.25%",
-        volume: "45.2M",
-        status: "Active",
-    },
-    {
-        symbol: "MSFT",
-        name: "Microsoft Corp.",
-        price: "405.12",
-        change: "+0.85%",
-        volume: "22.1M",
-        status: "Active",
-    },
-    {
-        symbol: "GOOGL",
-        name: "Alphabet Inc.",
-        price: "142.38",
-        change: "-0.42%",
-        volume: "18.5M",
-        status: "Active",
-    },
-    {
-        symbol: "AMZN",
-        name: "Amazon.com Inc.",
-        price: "175.35",
-        change: "+2.15%",
-        volume: "32.8M",
-        status: "Active",
-    },
-    {
-        symbol: "TSLA",
-        name: "Tesla Inc.",
-        price: "198.25",
-        change: "-1.55%",
-        volume: "85.4M",
-        status: "Active",
-    },
-];
+import { ApiService } from "@/shared/services/apiService";
+import type { InstrumentInDb, PriceHistoryDailyInDb } from "@/shared/types/apiTypes";
+import { useAppStore } from "@/shared/store/appStore";
+import InstrumentPriceDeferred from "@/components/InstrumentPriceDeferred";
 
 export const DashboardPage = () => {
+    const [instruments, setInstruments] = useState<InstrumentInDb[]>([]);
+    const { selectedExchange, setPreviousCloseMap } = useAppStore();
+
+    useEffect(() => {
+        const fetchInstruments = async () => {
+            if (!selectedExchange) return;
+            try {
+                const data = await ApiService.getInstruments(selectedExchange);
+                if (Array.isArray(data)) {
+                    setInstruments(data);
+                } else if (typeof data === 'object' && data !== null) {
+                    setInstruments(Object.values(data));
+                }
+            } catch (error) {
+                console.error("Failed to fetch instruments:", error);
+            }
+        };
+        fetchInstruments();
+
+        const fetchPreviousClose = async () => {
+            if (!selectedExchange) return;
+            try {
+                const data: {
+                    exchange: string;
+                    data: {
+                        instrument: InstrumentInDb;
+                        price_history: PriceHistoryDailyInDb;
+                    }[]
+                } = await ApiService.getPreviousCloseForExchange(selectedExchange);
+
+                const previousCloseData = data.data.reduce((acc, item) => {
+                    if (item.price_history.close != null) {
+                        acc[item.instrument.symbol] = item.price_history.close;
+                    }
+                    return acc;
+                }, {} as Record<string, number>);
+
+                setPreviousCloseMap(previousCloseData);
+            } catch (error) {
+                console.error("Failed to fetch previous close:", error);
+            }
+        };
+        fetchPreviousClose();
+
+    }, [selectedExchange, setPreviousCloseMap]);
+
     return (
         <div className="flex flex-col gap-6 p-6">
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
                     <p className="text-muted-foreground">
-                        Market overview and real-time statistics.
+                        Market overview and real-time statistics for {selectedExchange || 'All Exchanges'}.
                     </p>
                 </div>
             </div>
@@ -76,14 +83,14 @@ export const DashboardPage = () => {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
-                            Active Stocks
+                            Active Instruments
                         </CardTitle>
                         <Activity className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">2,345</div>
+                        <div className="text-2xl font-bold">{instruments.length}</div>
                         <p className="text-xs text-muted-foreground">
-                            +180 from last month
+                            In selected exchange
                         </p>
                     </CardContent>
                 </Card>
@@ -95,9 +102,9 @@ export const DashboardPage = () => {
                         <BarChart3 className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">45.2M</div>
+                        <div className="text-2xl font-bold">--</div>
                         <p className="text-xs text-muted-foreground">
-                            +19% from yesterday
+                            Real-time volume
                         </p>
                     </CardContent>
                 </Card>
@@ -111,7 +118,7 @@ export const DashboardPage = () => {
                     <CardContent>
                         <div className="text-2xl font-bold text-green-600">Open</div>
                         <p className="text-xs text-muted-foreground">
-                            Closes in 4h 30m
+                            --
                         </p>
                     </CardContent>
                 </Card>
@@ -123,9 +130,9 @@ export const DashboardPage = () => {
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">$12.4T</div>
+                        <div className="text-2xl font-bold">--</div>
                         <p className="text-xs text-muted-foreground">
-                            +2.5% from last year
+                            --
                         </p>
                     </CardContent>
                 </Card>
@@ -134,7 +141,7 @@ export const DashboardPage = () => {
             {/* Stocks Table */}
             <Card className="col-span-4">
                 <CardHeader>
-                    <CardTitle>Market Movers</CardTitle>
+                    <CardTitle>Instruments</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -143,36 +150,39 @@ export const DashboardPage = () => {
                                 <TableHead>Symbol</TableHead>
                                 <TableHead>Name</TableHead>
                                 <TableHead>Price</TableHead>
-                                <TableHead>Change</TableHead>
-                                <TableHead>Volume</TableHead>
                                 <TableHead>Status</TableHead>
+                                <TableHead>Type ID</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {stockList.map((stock) => (
-                                <TableRow key={stock.symbol}>
-                                    <TableCell className="font-medium">
-                                        {stock.symbol}
-                                    </TableCell>
-                                    <TableCell>{stock.name}</TableCell>
-                                    <TableCell>${stock.price}</TableCell>
-                                    <TableCell
-                                        className={
-                                            stock.change.startsWith("+")
-                                                ? "text-green-600"
-                                                : "text-red-600"
-                                        }
-                                    >
-                                        {stock.change}
-                                    </TableCell>
-                                    <TableCell>{stock.volume}</TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                                            {stock.status}
-                                        </Badge>
+                            {instruments.length > 0 ? (
+                                instruments.map((instrument) => (
+                                    <TableRow key={instrument.id}>
+                                        <TableCell className="font-medium">
+                                            {instrument.symbol}
+                                        </TableCell>
+                                        <TableCell>{instrument.name}</TableCell>
+                                        <TableCell>
+                                            <InstrumentPriceDeferred
+                                                symbol={instrument.symbol}
+                                                className="text-sm"
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline" className={!instrument.delisted ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}>
+                                                {!instrument.delisted ? "Active" : "Delisted"}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>{instrument.instrument_type_id}</TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center">
+                                        No instruments found for this exchange.
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            )}
                         </TableBody>
                     </Table>
                 </CardContent>

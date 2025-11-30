@@ -1,14 +1,16 @@
 // Chart.tsx
-// A lightweight-charts candlestick chart that streams OHLC updates from a local DataService
-// and renders them in near real-time using series.update(). The chart auto-sizes to its
-// container, colors bullish/bearish candles, and keeps the viewport scrolled to the right.
+// A lightweight-charts candlestick chart that displays historical data from API
+// and streams live updates from WebSocket.
 import { useEffect, useRef, useState, useMemo } from 'react';
-import { type CandlestickData, CandlestickSeries, createChart, type Time, ColorType } from 'lightweight-charts';
-import { useDataStore } from '../services/dataService';
+import { type CandlestickData, CandlestickSeries, createChart, ColorType } from 'lightweight-charts';
+import { useDataStore, type MarketData } from '../services/dataService';
 import { useShallow } from 'zustand/react/shallow';
-import type { UnpackedData } from "../utils/utils.ts";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { WebSocketMessageType } from '../utils/CommonConstants';
+import { ApiService } from '../services/apiService';
+import { WebSocketService } from '../services/websocketService';
+import { parseApiData, aggregateCandles, updateLiveCandle } from '../utils/chartUtils';
 
 /**
  * Timeframe constants for chart intervals (in minutes)
@@ -26,91 +28,56 @@ const TIMEFRAMES = {
 type Timeframe = typeof TIMEFRAMES[keyof typeof TIMEFRAMES];
 
 /**
- * Helper to convert timeframe to milliseconds
+ * Helper to extract price from MarketData
  */
-const timeframeToMs = (timeframe: Timeframe): number => {
-    return timeframe * 60 * 1000; // Convert minutes to milliseconds
+const getPrice = (data: MarketData): number | undefined => {
+    if (data.type === WebSocketMessageType.UPDATE) {
+        return (data as any).price;
+    }
+    if (data.type === WebSocketMessageType.SNAPSHOT) {
+        return (data as any).close;
+    }
+    // Fallback for legacy or incomplete data
+    if ('price' in data) return (data as any).price;
+    if ('close' in data) return (data as any).close;
+    return undefined;
 };
 
-/**
- * Props interface for Chart component
- */
 interface ChartProps {
     symbol: string;
 }
 
-/**
- * Chart component
- * - Initializes a lightweight-charts candlestick chart
- * - Streams incoming OHLCV updates from DataService into the chart via series.update
- * - Prevents duplicate updates by tracking the last processed timestamp
- */
 const Chart = ({ symbol }: ChartProps) => {
-    /**
-     * Current timeframe for the chart (default: 5 minutes)
-     */
+    // --- State ---
     const [timeframe, setTimeframe] = useState<Timeframe>(TIMEFRAMES.FIVE_MINUTES);
-
-    /**
-     * Debug state to track candle count (for UI display)
-     */
+    const [isLoading, setIsLoading] = useState(false);
     const [candleCount, setCandleCount] = useState(0);
+    const [lastUpdateTime, setLastUpdateTime] = useState<string>('--:--:--');
 
-    /**
-     * Debug state to track current bucket time (for UI display)
-     */
-    const [currentBucketTime, setCurrentBucketTime] = useState<number | null>(null);
-
-    /**
-     * Host div for the chart. Passed to lightweight-charts createChart to mount canvas.
-     */
+    // --- Refs ---
     const chartContainerRef = useRef<HTMLDivElement>(null);
-
-    /**
-     * Chart instance ref so we can clean up on unmount.
-     */
     const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
-
-    /**
-     * Series instance ref so we can push real-time updates without re-rendering React.
-     * Using the series reference avoids storing large arrays in React state.
-     */
     const seriesRef = useRef<ReturnType<ReturnType<typeof createChart>['addSeries']> | null>(null);
 
-    /**
-     * Tracks the last processed timestamp to avoid applying the same update repeatedly
-     * when the store still holds the previous tick/candle.
-     */
-    const lastTsRef = useRef<number | null>(null);
+    // Track the last candle to properly merge live updates
+    const lastCandleRef = useRef<CandlestickData | null>(null);
 
-    /**
-     * Store aggregated candles by timeframe bucket.
-     * Key: time bucket (normalized timestamp), Value: CandlestickData
-     */
-    const candlesRef = useRef<Map<number, CandlestickData>>(new Map());
-
-    /**
-     * Track the current time bucket to detect when we move to a new candle
-     */
-    const currentTimeBucketRef = useRef<number | null>(null);
-
-    // Subscribe to the specific symbol's data array using shallow comparison
-    // This prevents infinite loops by not creating new array references
+    // --- Data Store Subscription ---
+    // Subscribe to the specific symbol's data for live updates
     const symbolDataArray = useDataStore(
-        useShallow((state: any) => state.data[symbol] as UnpackedData[] | undefined)
+        useShallow((state: any) => state.data[symbol] as MarketData[] | undefined)
     );
 
-    // Get the latest tick from the array (memoized to prevent unnecessary recalculations)
-    const symbolData = useMemo(() => {
+    // Get the latest tick (memoized)
+    const latestTick = useMemo(() => {
         if (!symbolDataArray || symbolDataArray.length === 0) return undefined;
         return symbolDataArray[symbolDataArray.length - 1];
     }, [symbolDataArray]);
 
-    // Chart initialization and teardown
+    // --- Chart Initialization ---
     useEffect(() => {
         if (!chartContainerRef.current) return;
 
-        // Create a responsive chart bound to the container
         const chart = createChart(chartContainerRef.current, {
             layout: {
                 background: { type: ColorType.Solid, color: 'transparent' },
@@ -121,23 +88,12 @@ const Chart = ({ symbol }: ChartProps) => {
                 horzLines: { color: '#f0f3fa' },
             },
             autoSize: true,
-            handleScroll: {
-                mouseWheel: true,
-                pressedMouseMove: true,
-                horzTouchDrag: true,
-                vertTouchDrag: false,
-            },
-            handleScale: {
-                axisPressedMouseMove: {
-                    time: true,
-                    price: false,
-                },
-                mouseWheel: true,
-                pinch: false,
+            timeScale: {
+                timeVisible: true,
+                secondsVisible: false,
             },
         });
 
-        // Configure a candlestick series with custom colors
         const candleSeries = chart.addSeries(CandlestickSeries, {
             upColor: '#26a69a',
             downColor: '#ef5350',
@@ -146,166 +102,120 @@ const Chart = ({ symbol }: ChartProps) => {
             wickDownColor: '#ef5350',
         });
 
-        // Fit current data (if any) and scroll slightly to the right
-        chart.timeScale().fitContent();
-        chart.timeScale().scrollToPosition(5, true);
-
         chartRef.current = chart;
         seriesRef.current = candleSeries;
 
-        // Resize observer to handle container resizing
+        // Resize observer
         const resizeObserver = new ResizeObserver(entries => {
-            if (entries.length === 0 || entries[0].target !== chartContainerRef.current) { return; }
+            if (entries.length === 0 || entries[0].target !== chartContainerRef.current) return;
             const newRect = entries[0].contentRect;
             chart.applyOptions({ width: newRect.width, height: newRect.height });
         });
-
         resizeObserver.observe(chartContainerRef.current);
 
-        // Cleanup the chart on unmount to free resources and detach observers
         return () => {
             resizeObserver.disconnect();
             chart.remove();
         };
     }, []);
 
-    // Stream real-time updates into the series whenever symbolData changes in Zustand
+    // --- Historical Data Fetching ---
     useEffect(() => {
-        if (!symbolData || !seriesRef.current) return;
+        const fetchData = async () => {
+            if (!seriesRef.current) return;
 
-        if (!symbolData.price) {
-            return;
-        }
+            setIsLoading(true);
+            try {
+                let rawData;
+                // Fetch appropriate data based on timeframe
+                if (timeframe === TIMEFRAMES.ONE_DAY) {
+                    rawData = await ApiService.getDailyPrices(symbol);
+                } else {
+                    rawData = await ApiService.getIntradayPrices(symbol);
+                }
 
-        if (lastTsRef.current === symbolData.timestamp) {
-            return;
-        }
-        lastTsRef.current = symbolData.timestamp;
+                // Parse and process data
+                let candles = parseApiData(rawData);
 
-        let timestampMs = symbolData.timestamp;
-        if (symbolData.timestamp < 32503680000) {
-            timestampMs = symbolData.timestamp * 1000;
-        }
+                // Aggregate if needed (for intraday timeframes > 1m)
+                if (timeframe !== TIMEFRAMES.ONE_DAY && timeframe !== TIMEFRAMES.ONE_MINUTE) {
+                    candles = aggregateCandles(candles, timeframe);
+                }
 
-        const timeframeMs = timeframeToMs(timeframe);
-        const timeBucket = Math.floor(timestampMs / timeframeMs) * timeframeMs;
-        const chartTime = Math.floor(timeBucket / 1000) as Time;
-        const isNewBucket = currentTimeBucketRef.current !== timeBucket;
+                seriesRef.current.setData(candles);
 
-        if (isNewBucket) {
-            currentTimeBucketRef.current = timeBucket;
-            setCurrentBucketTime(timeBucket);
+                // Update state refs
+                lastCandleRef.current = candles.length > 0 ? candles[candles.length - 1] : null;
+                setCandleCount(candles.length);
 
-            const newCandle: CandlestickData = {
-                time: chartTime,
-                open: symbolData.price,
-                high: symbolData.price,
-                low: symbolData.price,
-                close: symbolData.price
-            };
-
-            candlesRef.current.set(timeBucket, newCandle);
-            setCandleCount(candlesRef.current.size);
-            seriesRef.current.update(newCandle);
-        } else {
-            const existingCandle = candlesRef.current.get(timeBucket);
-
-            if (existingCandle) {
-                const updatedCandle: CandlestickData = {
-                    time: chartTime,
-                    open: existingCandle.open,
-                    high: Math.max(existingCandle.high as number, symbolData.price),
-                    low: Math.min(existingCandle.low as number, symbolData.price),
-                    close: symbolData.price
-                };
-
-                candlesRef.current.set(timeBucket, updatedCandle);
-                seriesRef.current.update(updatedCandle);
+                // Fit content
+                if (chartRef.current) {
+                    chartRef.current.timeScale().fitContent();
+                }
+            } catch (error) {
+                console.error("Failed to fetch chart data:", error);
+            } finally {
+                setIsLoading(false);
             }
-        }
+        };
 
-        if (chartRef.current && isNewBucket) {
-            chartRef.current.timeScale().scrollToRealTime();
-        }
+        fetchData();
+    }, [symbol, timeframe]);
 
-    }, [symbolData, timeframe, symbol]);
-
-    // Rebuild candles when timeframe changes using ALL historical data
+    // --- WebSocket Subscription ---
     useEffect(() => {
-        if (!seriesRef.current) return;
-
-        candlesRef.current.clear();
-        lastTsRef.current = null;
-        currentTimeBucketRef.current = null;
-
-        const allHistoricalData = useDataStore.getState().data[symbol] || [];
-
-        if (!Array.isArray(allHistoricalData) || allHistoricalData.length === 0) {
-            seriesRef.current.setData([]);
-            setCandleCount(0);
-            setCurrentBucketTime(null);
-            return;
-        }
-
-        const timeframeMs = timeframeToMs(timeframe);
-
-        allHistoricalData.forEach((tick) => {
-            if (!tick.price) return;
-
-            let timestampMs = tick.timestamp;
-            if (tick.timestamp < 32503680000) {
-                timestampMs = tick.timestamp * 1000;
-            }
-
-            const timeBucket = Math.floor(timestampMs / timeframeMs) * timeframeMs;
-            const chartTime = Math.floor(timeBucket / 1000) as Time;
-
-            const existingCandle = candlesRef.current.get(timeBucket);
-
-            if (existingCandle) {
-                const updatedCandle: CandlestickData = {
-                    time: chartTime,
-                    open: existingCandle.open,
-                    high: Math.max(existingCandle.high as number, tick.price),
-                    low: Math.min(existingCandle.low as number, tick.price),
-                    close: tick.price
-                };
-                candlesRef.current.set(timeBucket, updatedCandle);
-            } else {
-                const newCandle: CandlestickData = {
-                    time: chartTime,
-                    open: tick.price,
-                    high: tick.price,
-                    low: tick.price,
-                    close: tick.price
-                };
-                candlesRef.current.set(timeBucket, newCandle);
-            }
+        // Ensure we are subscribed to the symbol
+        WebSocketService.sendMessage({
+            message_type: WebSocketMessageType.SUBSCRIBE,
+            channel: symbol,
+            type: 'ltp' // We need ticks for the chart
         });
 
-        const allCandles = Array.from(candlesRef.current.values()).sort((a, b) => {
-            const timeA = typeof a.time === 'number' ? a.time : 0;
-            const timeB = typeof b.time === 'number' ? b.time : 0;
-            return timeA - timeB;
-        });
+        return () => {
+            // Optional: Unsubscribe on unmount or symbol change
+            // Note: If other components use this symbol, we might not want to unsubscribe immediately.
+            // But for correctness of this component:
+            WebSocketService.sendMessage({
+                message_type: WebSocketMessageType.UNSUBSCRIBE,
+                channel: symbol,
+            });
+        };
+    }, [symbol]);
 
-        seriesRef.current.setData(allCandles);
-        setCandleCount(allCandles.length);
+    // --- Live Updates ---
+    useEffect(() => {
+        if (!latestTick || !seriesRef.current) return;
 
-        if (allCandles.length > 0) {
-            const lastCandle = allCandles[allCandles.length - 1];
-            const lastTime = (lastCandle.time as number) * 1000;
-            currentTimeBucketRef.current = lastTime;
-            setCurrentBucketTime(lastTime);
+        const price = getPrice(latestTick);
+        if (price === undefined) return;
+
+        // Use timestamp from tick, or current time if missing
+        let timestamp = latestTick.timestamp ? Number(latestTick.timestamp) : Date.now() / 1000;
+
+        // Ensure timestamp is in seconds for chartUtils
+        if (timestamp > 32503680000) { // If > year 3000 in seconds, it's ms
+            timestamp = timestamp / 1000;
         }
 
-        if (chartRef.current) {
-            chartRef.current.timeScale().fitContent();
-            chartRef.current.timeScale().scrollToRealTime();
+        const { candle, isNew } = updateLiveCandle(
+            lastCandleRef.current,
+            price,
+            timestamp,
+            timeframe
+        );
+
+        seriesRef.current.update(candle);
+        lastCandleRef.current = candle;
+
+        if (isNew) {
+            setCandleCount(prev => prev + 1);
         }
 
-    }, [timeframe, symbol]);
+        setLastUpdateTime(new Date().toLocaleTimeString());
 
+    }, [latestTick, timeframe]);
+
+    // --- Handlers ---
     const handleTimeframeChange = (value: string) => {
         setTimeframe(Number(value) as Timeframe);
     };
@@ -313,15 +223,17 @@ const Chart = ({ symbol }: ChartProps) => {
     return (
         <div className="w-full space-y-2">
             <div className="flex items-center justify-between">
-                <div className="text-lg font-medium text-foreground">
-                    {symbol} Chart
+                <div className="flex items-center gap-2">
+                    <span className="text-lg font-medium text-foreground">{symbol} Chart</span>
+                    {isLoading && <span className="text-xs text-muted-foreground animate-pulse">Loading...</span>}
                 </div>
+
                 <Tabs
                     value={String(timeframe)}
                     onValueChange={handleTimeframeChange}
                     className="w-auto"
                 >
-                    <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7 h-8">
+                    <TabsList className="grid w-full grid-cols-7 h-8">
                         {Object.entries(TIMEFRAMES).map(([key, value]) => (
                             <TabsTrigger
                                 key={key}
@@ -341,13 +253,9 @@ const Chart = ({ symbol }: ChartProps) => {
             </div>
 
             <div className="relative h-[500px] w-full border rounded-md overflow-hidden bg-background shadow-sm">
-                <div
-                    ref={chartContainerRef}
-                    className="absolute inset-0"
-                />
+                <div ref={chartContainerRef} className="absolute inset-0" />
             </div>
 
-            {/* Subtle status bar */}
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <Badge variant="outline" className="gap-1 font-normal">
                     <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
@@ -357,9 +265,7 @@ const Chart = ({ symbol }: ChartProps) => {
                     Candles: <span className="font-medium text-foreground">{candleCount}</span>
                 </div>
                 <div>
-                    Last Update: <span className="font-medium text-foreground">
-                        {symbolData?.timestamp ? new Date(symbolData.timestamp < 32503680000 ? symbolData.timestamp * 1000 : symbolData.timestamp).toLocaleTimeString() : '--:--:--'}
-                    </span>
+                    Last Update: <span className="font-medium text-foreground">{lastUpdateTime}</span>
                 </div>
             </div>
         </div>

@@ -6,12 +6,25 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { SectorsPage } from "./pages/SectorsPage";
 import { ProvidersPage } from "./pages/ProvidersPage";
 import { ConfigPage } from "./pages/ConfigPage";
+import LoginPage from "./pages/LoginPage";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "./shared/Components/AppSidebar";
 
+import { useEffect } from "react";
+import { useWebSocketStore } from "@/shared/services/websocketService";
+
 // Layout component that includes the Header and Sidebar
 const Layout = () => {
+    const { connect, isConnected } = useWebSocketStore();
+
+    useEffect(() => {
+        if (!isConnected) {
+            connect('ws://localhost:8000/ws', true);
+        }
+    }, [connect, isConnected]);
+
     return (
         <SidebarProvider>
             <AppSidebar />
@@ -27,36 +40,46 @@ const Layout = () => {
 
 export const router = createBrowserRouter([
     {
+        path: "/login",
+        element: <LoginPage />,
+    },
+    {
         path: "/",
-        element: <Layout />,
+        element: <ProtectedRoute />,
         children: [
             {
                 path: "/",
-                element: <DashboardPage />,
-            },
-            {
-                path: "/dashboard",
-                element: <DashboardPage />,
-            },
-            {
-                path: "/stocks",
-                element: <StockSearchPage />,
-            },
-            {
-                path: "/stocks/:symbol",
-                element: <StockDetailPage />,
-            },
-            {
-                path: "/sectors",
-                element: <SectorsPage />,
-            },
-            {
-                path: "/providers",
-                element: <ProvidersPage />,
-            },
-            {
-                path: "/config",
-                element: <ConfigPage />,
+                element: <Layout />,
+                children: [
+                    {
+                        path: "/",
+                        element: <DashboardPage />,
+                    },
+                    {
+                        path: "/dashboard",
+                        element: <DashboardPage />,
+                    },
+                    {
+                        path: "/stocks",
+                        element: <StockSearchPage />,
+                    },
+                    {
+                        path: "/stocks/:symbol",
+                        element: <StockDetailPage />,
+                    },
+                    {
+                        path: "/sectors",
+                        element: <SectorsPage />,
+                    },
+                    {
+                        path: "/providers",
+                        element: <ProvidersPage />,
+                    },
+                    {
+                        path: "/config",
+                        element: <ConfigPage />,
+                    },
+                ],
             },
         ],
     },
