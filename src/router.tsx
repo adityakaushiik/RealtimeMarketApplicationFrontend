@@ -1,16 +1,14 @@
 import { createBrowserRouter, Outlet } from "react-router-dom";
-import { Header } from "./shared/Components/Header";
+import { Header } from "./components/Header";
 import { StockSearchPage } from "./pages/StockSearchPage";
 import { StockDetailPage } from "./pages/StockDetailPage";
 import { DashboardPage } from "./pages/DashboardPage";
-import { SectorsPage } from "./pages/SectorsPage";
-import { ProvidersPage } from "./pages/ProvidersPage";
 import { ConfigPage } from "./pages/ConfigPage";
 import LoginPage from "./pages/LoginPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { AppSidebar } from "./shared/Components/AppSidebar";
+import { AppSidebar } from "./components/AppSidebar";
 
 import { useEffect } from "react";
 import { useWebSocketStore } from "@/shared/services/websocketService";
@@ -26,7 +24,7 @@ const Layout = () => {
     }, [connect, isConnected]);
 
     return (
-        <SidebarProvider>
+        <SidebarProvider defaultOpen={false}>
             <AppSidebar />
             <SidebarInset>
                 <Header />
@@ -66,14 +64,6 @@ export const router = createBrowserRouter([
                     {
                         path: "/stocks/:symbol",
                         element: <StockDetailPage />,
-                    },
-                    {
-                        path: "/sectors",
-                        element: <SectorsPage />,
-                    },
-                    {
-                        path: "/providers",
-                        element: <ProvidersPage />,
                     },
                     {
                         path: "/config",

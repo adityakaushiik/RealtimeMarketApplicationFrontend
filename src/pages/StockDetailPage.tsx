@@ -5,7 +5,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import Chart from "@/shared/Components/Chart";
+import Chart from "@/components/Chart";
 import { useWebSocketStore } from "@/shared/services/websocketService";
 import { useEffect, useState } from 'react';
 import { ApiService } from "@/shared/services/apiService";

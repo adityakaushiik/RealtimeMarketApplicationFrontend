@@ -15,6 +15,7 @@ export const parseApiData = (
         const dateStr = item.datetime || item.date;
 
         if (!dateStr) return null;
+        if (!item.open || !item.close) return null;
 
         let time: Time;
 

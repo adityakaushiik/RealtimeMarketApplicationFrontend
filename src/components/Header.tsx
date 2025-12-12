@@ -55,7 +55,7 @@ export function Header() {
                             <SelectLabel>Exchanges</SelectLabel>
                             {exchanges.map((exchange) => (
                                 <SelectItem key={exchange.id} value={exchange.code}>
-                                    {exchange.name}
+                                    {exchange.code}
                                 </SelectItem>
                             ))}
                         </SelectGroup>

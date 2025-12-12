@@ -35,6 +35,28 @@ export interface InstrumentUpdate {
     delisted?: boolean | null;
 }
 
+export interface InstrumentTypeCreate {
+    code: string;
+    name: string;
+    description?: string | null;
+    category?: string | null;
+    display_order?: number | null;
+}
+
+export interface InstrumentTypeUpdate {
+    code?: string | null;
+    name?: string | null;
+    description?: string | null;
+    category?: string | null;
+    display_order?: number | null;
+}
+
+export interface InstrumentTypeInDb extends InstrumentTypeCreate {
+    id: number;
+}
+
+
+
 export interface LoginRequest {
     username_or_email: string;
     password?: string;
@@ -104,6 +126,14 @@ export interface ProviderInDb extends ProviderCreate {
     is_active: boolean;
 }
 
+export interface ProviderUpdate {
+    name?: string | null;
+    code?: string | null;
+    credentials?: Record<string, any> | null;
+    rate_limit?: number | null;
+    is_active?: boolean | null;
+}
+
 export interface UserWithPassword {
     email: string;
     fname?: string | null;
@@ -121,4 +151,20 @@ export interface ValidationError {
 
 export interface HTTPValidationError {
     detail: ValidationError[];
+}
+
+export interface SectorInDb {
+    id: number;
+    name: string;
+    description?: string | null;
+}
+
+export interface SectorCreate {
+    name: string;
+    description?: string | null;
+}
+
+export interface SectorUpdate {
+    name?: string | null;
+    description?: string | null;
 }

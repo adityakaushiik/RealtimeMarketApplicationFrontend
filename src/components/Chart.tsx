@@ -3,14 +3,14 @@
 // and streams live updates from WebSocket.
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { type CandlestickData, CandlestickSeries, createChart, ColorType } from 'lightweight-charts';
-import { useDataStore, type MarketData } from '../services/dataService';
+import { useDataStore, type MarketData } from '../shared/services/dataService';
 import { useShallow } from 'zustand/react/shallow';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { WebSocketMessageType } from '../utils/CommonConstants';
-import { ApiService } from '../services/apiService';
-import { WebSocketService } from '../services/websocketService';
-import { parseApiData, aggregateCandles, updateLiveCandle } from '../utils/chartUtils';
+import { WebSocketMessageType } from '../shared/utils/CommonConstants';
+import { ApiService } from '../shared/services/apiService';
+import { WebSocketService } from '../shared/services/websocketService';
+import { parseApiData, aggregateCandles, updateLiveCandle } from '../shared/utils/chartUtils';
 
 /**
  * Timeframe constants for chart intervals (in minutes)
@@ -49,7 +49,7 @@ interface ChartProps {
 
 const Chart = ({ symbol }: ChartProps) => {
     // --- State ---
-    const [timeframe, setTimeframe] = useState<Timeframe>(TIMEFRAMES.FIVE_MINUTES);
+    const [timeframe, setTimeframe] = useState<Timeframe>(TIMEFRAMES.ONE_DAY);
     const [isLoading, setIsLoading] = useState(false);
     const [candleCount, setCandleCount] = useState(0);
     const [lastUpdateTime, setLastUpdateTime] = useState<string>('--:--:--');

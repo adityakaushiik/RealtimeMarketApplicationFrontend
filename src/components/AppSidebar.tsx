@@ -13,8 +13,6 @@ import {
 import {
     LayoutDashboard,
     LineChart,
-    PieChart,
-    Server,
     Settings,
     LogOut,
     User,
@@ -34,16 +32,6 @@ const items = [
         title: "Stocks",
         url: "/stocks",
         icon: LineChart,
-    },
-    {
-        title: "Sectors",
-        url: "/sectors",
-        icon: PieChart,
-    },
-    {
-        title: "Providers",
-        url: "/providers",
-        icon: Server,
     },
     {
         title: "Config",

@@ -3,7 +3,9 @@ import type {
     InstrumentInDb, InstrumentCreate, InstrumentUpdate,
     ExchangeInDb, ExchangeCreate,
     ProviderInDb, ProviderCreate,
-    PriceHistoryDailyInDb, PriceHistoryIntradayInDb
+    PriceHistoryDailyInDb, PriceHistoryIntradayInDb,
+    SectorInDb, SectorCreate, SectorUpdate, ProviderUpdate,
+    InstrumentTypeCreate, InstrumentTypeUpdate, InstrumentTypeInDb
 } from '../types/apiTypes';
 
 const BASE_URL = 'http://localhost:8000'; // Adjust as needed
@@ -128,6 +130,40 @@ export class ApiService {
         });
     }
 
+    static async getInstrumentTypes(): Promise<InstrumentTypeInDb[]> {
+        return this.getCached<InstrumentTypeInDb[]>('/instrument_type/');
+    }
+
+    static async createInstrumentType(data: InstrumentTypeCreate): Promise<InstrumentTypeInDb> {
+        return this.request<InstrumentTypeInDb>('/instrument_type/', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    static async getInstrumentTypeById(id: number): Promise<InstrumentTypeInDb> {
+        return this.getCached<InstrumentTypeInDb>(`/instrument_type/${id}`);
+    }
+
+    static async updateInstrumentType(id: number, data: InstrumentTypeUpdate): Promise<InstrumentTypeInDb> {
+        return this.request<InstrumentTypeInDb>(`/instrument_type/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    }
+
+    static async deleteInstrumentType(id: number): Promise<void> {
+        return this.request<void>(`/instrument_type/${id}`, {
+            method: 'DELETE',
+        });
+    }
+
+    static async deleteInstrument(id: number): Promise<void> {
+        return this.request<void>(`/instrument/${id}`, {
+            method: 'DELETE',
+        });
+    }
+
     // Exchanges
     static async getExchanges(): Promise<ExchangeInDb[]> {
         return this.getCached<ExchangeInDb[]>('/exchange/');
@@ -152,6 +188,23 @@ export class ApiService {
         });
     }
 
+    static async getProviderById(id: number): Promise<ProviderInDb> {
+        return this.getCached<ProviderInDb>(`/provider/${id}`);
+    }
+
+    static async updateProvider(id: number, data: ProviderUpdate): Promise<ProviderInDb> {
+        return this.request<ProviderInDb>(`/provider/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    }
+
+    static async deleteProvider(id: number): Promise<void> {
+        return this.request<void>(`/provider/${id}`, {
+            method: 'DELETE',
+        });
+    }
+
     static async getIntradayPrices(symbol: string): Promise<PriceHistoryIntradayInDb[]> {
         return this.getCached<PriceHistoryIntradayInDb[]>(`/marketdata/intraday/${symbol}`, true);
     }
@@ -164,5 +217,34 @@ export class ApiService {
     static async getPreviousCloseForExchange(exchange: string): Promise<any> {
         console.log(`Fetching previous close for exchange: ${exchange}`);
         return this.getCached(`/marketdata/prev_close/${exchange}`, true);
+    }
+
+
+    static async getSectorList(): Promise<SectorInDb[]> {
+        return this.getCached<SectorInDb[]>('/sector');
+    }
+
+    static async createSector(data: SectorCreate): Promise<SectorInDb> {
+        return this.request<SectorInDb>('/sector/', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    static async updateSector(id: number, data: SectorUpdate): Promise<SectorInDb> {
+        return this.request<SectorInDb>(`/sector/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    }
+
+    static async getSectorById(id: number): Promise<SectorInDb> {
+        return this.getCached<SectorInDb>(`/sector/${id}`);
+    }
+
+    static async deleteSector(id: number): Promise<void> {
+        return this.request<void>(`/sector/${id}`, {
+            method: 'DELETE',
+        });
     }
 }
