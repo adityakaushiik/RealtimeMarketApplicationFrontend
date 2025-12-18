@@ -23,6 +23,7 @@ export interface InstrumentCreate {
 
 export interface InstrumentInDb extends InstrumentCreate {
     id: number;
+    should_record_data?: boolean;
 }
 
 export interface InstrumentUpdate {
@@ -168,3 +169,11 @@ export interface SectorUpdate {
     name?: string | null;
     description?: string | null;
 }
+
+export interface ProviderInstrumentMappingCreate {
+    provider_id: number;
+    instrument_id: number;
+    provider_instrument_search_code: string;
+}
+
+export interface ProviderInstrumentMappingInDb extends ProviderInstrumentMappingCreate { }

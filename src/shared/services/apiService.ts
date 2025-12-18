@@ -5,7 +5,8 @@ import type {
     ProviderInDb, ProviderCreate,
     PriceHistoryDailyInDb, PriceHistoryIntradayInDb,
     SectorInDb, SectorCreate, SectorUpdate, ProviderUpdate,
-    InstrumentTypeCreate, InstrumentTypeUpdate, InstrumentTypeInDb
+    InstrumentTypeCreate, InstrumentTypeUpdate, InstrumentTypeInDb,
+    ProviderInstrumentMappingCreate, ProviderInstrumentMappingInDb
 } from '../types/apiTypes';
 
 const BASE_URL = 'http://localhost:8000'; // Adjust as needed
@@ -164,6 +165,18 @@ export class ApiService {
         });
     }
 
+    static async toggleInstrumentRecording(id: number, shouldRecord: boolean): Promise<InstrumentInDb> {
+        return this.request<InstrumentInDb>(`/instrument/${id}/recording?should_record=${shouldRecord}`, {
+            method: 'PATCH',
+        });
+    }
+
+    static async searchInstruments(query: string): Promise<InstrumentInDb[]> {
+        return this.request<InstrumentInDb[]>(`/instrument/search?query=${encodeURIComponent(query)}`, {
+            method: 'GET',
+        });
+    }
+
     // Exchanges
     static async getExchanges(): Promise<ExchangeInDb[]> {
         return this.getCached<ExchangeInDb[]>('/exchange/');
@@ -245,6 +258,25 @@ export class ApiService {
     static async deleteSector(id: number): Promise<void> {
         return this.request<void>(`/sector/${id}`, {
             method: 'DELETE',
+        });
+    }
+
+    // Provider Instrument Mappings
+    static async getInstrumentProviderMappings(instrumentId: number): Promise<ProviderInstrumentMappingInDb[]> {
+        return this.getCached<ProviderInstrumentMappingInDb[]>(`/provider/mapping/instrument/${instrumentId}`);
+    }
+
+    static async createProviderInstrumentMapping(data: ProviderInstrumentMappingCreate): Promise<ProviderInstrumentMappingInDb> {
+        return this.request<ProviderInstrumentMappingInDb>('/provider/mapping/', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    static async updateProviderInstrumentMapping(data: ProviderInstrumentMappingCreate): Promise<ProviderInstrumentMappingInDb> {
+        return this.request<ProviderInstrumentMappingInDb>('/provider/mapping/', {
+            method: 'PUT',
+            body: JSON.stringify(data),
         });
     }
 }

@@ -17,6 +17,7 @@ export interface WebSocketState {
 
 class WebSocketManager {
     private ws: WebSocket | null = null;
+    private messageQueue: string[] = [];
     private store!: {
         setState: (
             partial:
@@ -36,6 +37,12 @@ class WebSocketManager {
     }
 
     connect(url: string, binary = false) {
+        // Prevent redundant connections if already connected or connecting
+        if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
+            // console.log("WebSocket already connected or connecting.");
+            return;
+        }
+
         if (this.ws) {
             this.ws.close();
         }
@@ -49,6 +56,7 @@ class WebSocketManager {
 
             this.ws.onopen = () => {
                 this.store.setState({ isConnected: true, error: null });
+                this.flushMessageQueue();
             };
 
             this.ws.onmessage = async (ev: MessageEvent) => {
@@ -88,7 +96,7 @@ class WebSocketManager {
                         }
                     } else {
                         // Handle JSON messages - just log them as requested
-                        console.log("Received JSON message:", ev.data);
+                        // console.log("Received JSON message:", ev.data);
                     }
                 } catch (err) {
                     console.error("Error processing WebSocket message:", err);
@@ -116,13 +124,15 @@ class WebSocketManager {
     }
 
     sendMessage(message: unknown) {
-        console.log("Sending message:", message);
+        const messageStr = typeof message === "string" ? message : JSON.stringify(message);
+
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            const messageStr =
-                typeof message === "string" ? message : JSON.stringify(message);
+            // console.log("Sending message:", message);
             this.ws.send(messageStr);
         } else {
-            this.store.setState({ error: "WebSocket is not connected" });
+            // Queue the message if not connected
+            // console.log("Queueing message:", message);
+            this.messageQueue.push(messageStr);
         }
     }
 
@@ -131,6 +141,16 @@ class WebSocketManager {
             this.ws.send(data);
         } else {
             this.store.setState({ error: "WebSocket is not connected" });
+        }
+    }
+
+    private flushMessageQueue() {
+        while (this.messageQueue.length > 0 && this.ws && this.ws.readyState === WebSocket.OPEN) {
+            const msg = this.messageQueue.shift();
+            if (msg) {
+                // console.log("Flushed queued message:", msg);
+                this.ws.send(msg);
+            }
         }
     }
 }

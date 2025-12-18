@@ -3,72 +3,159 @@ import {
     Command,
     CommandEmpty,
     CommandGroup,
-    CommandInput,
     CommandItem,
     CommandList,
 } from "@/components/ui/command"
+import { Command as CommandPrimitive } from "cmdk"
 import { useNavigate } from "react-router-dom"
-import { Search } from "lucide-react"
+import { Search, TrendingUp, BarChart2, ArrowRight } from "lucide-react"
 import { ApiService } from "@/shared/services/apiService";
 import type { InstrumentInDb } from "@/shared/types/apiTypes";
+import { Badge } from "@/components/ui/badge";
 
 export function StockSearchPage() {
     const navigate = useNavigate()
     const [instruments, setInstruments] = useState<InstrumentInDb[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [isFocused, setIsFocused] = useState(false);
 
     useEffect(() => {
         const fetchInstruments = async () => {
+            if (!searchQuery.trim()) {
+                setInstruments([]);
+                return;
+            }
+
+            setLoading(true);
             try {
-                const data = await ApiService.getAllInstruments();
-                // Ensure data is an array
+                const data = await ApiService.searchInstruments(searchQuery);
                 if (Array.isArray(data)) {
                     setInstruments(data);
-                } else if (typeof data === 'object' && data !== null) {
-                    setInstruments(Object.values(data));
+                } else {
+                    setInstruments([]);
                 }
             } catch (error) {
-                console.error("Failed to fetch instruments:", error);
+                console.error("Failed to search instruments:", error);
+                setInstruments([]);
             } finally {
                 setLoading(false);
             }
         };
-        fetchInstruments();
-    }, []);
+
+        const timeoutId = setTimeout(() => {
+            fetchInstruments();
+        }, 300); // 300ms debounce
+
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery]);
 
     return (
-        <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)]">
-            <div className="w-full max-w-2xl space-y-4 text-center">
-                <h1 className="text-4xl font-bold tracking-tight">Search Stocks</h1>
-                <p className="text-muted-foreground text-lg">
-                    Find and analyze real-time market data for your favorite stocks.
-                </p>
+        <div className="relative min-h-[calc(100vh-4rem)] flex flex-col items-center justify-start pt-20 overflow-hidden bg-background/50">
+            {/* Background Decorative Elements */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl pointer-events-none -z-10">
+                <div className="absolute top-[-20%] left-[20%] w-[500px] h-[500px] rounded-full bg-primary/20 blur-[120px] mix-blend-screen opacity-50 animate-pulse" />
+                <div className="absolute top-[10%] result-[20%] w-[400px] h-[400px] rounded-full bg-blue-500/20 blur-[100px] mix-blend-screen opacity-50" />
+            </div>
 
-                <div className="relative w-full max-w-xl mx-auto mt-8 border rounded-lg shadow-sm bg-background">
-                    <Command className="rounded-lg border shadow-md">
-                        <CommandInput placeholder="Type a symbol or name..." />
-                        <CommandList>
-                            <CommandEmpty>{loading ? "Loading..." : "No results found."}</CommandEmpty>
-                            <CommandGroup heading="Suggestions">
-                                {instruments.slice(0, 50).map((instrument) => (
-                                    <CommandItem
-                                        key={instrument.id}
-                                        value={`${instrument.symbol} ${instrument.name}`}
-                                        onSelect={() => {
-                                            navigate(`/stocks/${instrument.symbol}`)
-                                        }}
-                                        className="cursor-pointer"
-                                    >
-                                        <Search className="mr-2 h-4 w-4" />
-                                        <span>{instrument.name}</span>
-                                        <span className="ml-auto text-muted-foreground text-xs">
-                                            {instrument.symbol}
-                                        </span>
-                                    </CommandItem>
-                                ))}
-                            </CommandGroup>
+            <div className={`w-full max-w-2xl space-y-8 px-4 transition-all duration-500 ${searchQuery ? 'mt-0' : 'mt-10'}`}>
+                <div className="text-center space-y-4">
+                    <h1 className="text-5xl md:text-6xl font-extrabold tracking-incredibly-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/70">
+                        Market Search
+                    </h1>
+                    <p className="text-xl text-muted-foreground font-light max-w-lg mx-auto leading-relaxed">
+                        Discover real-time data, analyze trends, and track your favorite instruments.
+                    </p>
+                </div>
+
+                <div
+                    className={`
+                        relative w-full mx-auto 
+                        rounded-xl border border-border/50 shadow-2xl 
+                        bg-background/80 backdrop-blur-xl 
+                        transition-all duration-300 ease-out
+                        ${isFocused ? 'ring-2 ring-primary/20 scale-[1.01]' : 'hover:border-primary/50'}
+                    `}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                >
+                    <Command className="rounded-xl border-none bg-transparent" shouldFilter={false}>
+                        <div className="flex items-center border-b border-border/50 px-3">
+                            <Search className={`mr-2 h-5 w-5 shrink-0 transition-colors ${isFocused ? 'text-primary' : 'text-muted-foreground'}`} />
+                            <CommandPrimitive.Input
+                                placeholder="Search by symbol or name (e.g. AAPL, Reliance)..."
+                                value={searchQuery}
+                                onValueChange={setSearchQuery}
+                                className="flex h-14 w-full rounded-md bg-transparent py-3 text-lg outline-none placeholder:text-muted-foreground/70 disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0"
+                            />
+                        </div>
+                        <CommandList className="max-h-[500px] overflow-y-auto custom-scrollbar">
+                            {loading && (
+                                <div className="py-12 flex flex-col items-center justify-center text-muted-foreground animate-in fade-in duration-300">
+                                    <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin mb-4" />
+                                    <span className="text-sm font-medium">Searching markets...</span>
+                                </div>
+                            )}
+
+                            {!loading && instruments.length === 0 && searchQuery && (
+                                <CommandEmpty className="py-12 text-center text-muted-foreground">
+                                    <div className="flex flex-col items-center space-y-2">
+                                        <Search className="h-12 w-12 opacity-20" />
+                                        <p className="text-lg font-medium">No results found</p>
+                                        <p className="text-sm">Try searching for a different symbol or company name.</p>
+                                    </div>
+                                </CommandEmpty>
+                            )}
+
+                            {instruments.length > 0 && (
+                                <CommandGroup heading={<span className="text-xs font-semibold tracking-wider text-muted-foreground/70 uppercase px-2">Instruments</span>}>
+                                    <div className="grid grid-cols-1 gap-1 p-2">
+                                        {instruments.map((instrument) => (
+                                            <CommandItem
+                                                key={instrument.id}
+                                                value={`${instrument.symbol} ${instrument.name}`}
+                                                onSelect={() => navigate(`/stocks/${instrument.symbol}`)}
+                                                className="
+                                                    group flex items-center justify-between p-3 rounded-lg 
+                                                    cursor-pointer transition-all duration-200
+                                                    hover:bg-primary/5 data-[selected=true]:bg-primary/10
+                                                "
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className="h-10 w-10 rounded-full bg-secondary/50 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                                                        <BarChart2 className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-base tracking-tight">{instrument.symbol}</span>
+                                                        <span className="text-sm text-muted-foreground line-clamp-1">{instrument.name}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
+                                                    {/* We could display exchange here if available */}
+                                                    <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0 duration-300" />
+                                                </div>
+                                            </CommandItem>
+                                        ))}
+                                    </div>
+                                </CommandGroup>
+                            )}
+
+                            {!searchQuery && !loading && (
+                                <div className="p-6 text-center">
+                                    <div className="flex flex-col items-center justify-center space-y-4 opacity-40">
+                                        <TrendingUp className="h-16 w-16 text-muted-foreground" />
+                                        <p className="text-sm text-muted-foreground">Start typing to search for stocks...</p>
+                                    </div>
+                                </div>
+                            )}
                         </CommandList>
                     </Command>
+                </div>
+
+                {/* Visual Footer/Hints */}
+                <div className="flex justify-center gap-4 text-xs text-muted-foreground/60">
+                    <span className="flex items-center gap-1"><Badge variant="outline" className="text-[10px] h-5 px-1 bg-muted/30">ENTER</Badge> to select</span>
+                    <span className="flex items-center gap-1"><Badge variant="outline" className="text-[10px] h-5 px-1 bg-muted/30">↓</Badge> to navigate</span>
                 </div>
             </div>
         </div>

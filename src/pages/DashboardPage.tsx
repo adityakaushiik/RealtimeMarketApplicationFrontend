@@ -1,28 +1,16 @@
 import { useEffect, useState } from "react";
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Activity, BarChart3, DollarSign, TrendingUp } from "lucide-react";
 import { ApiService } from "@/shared/services/apiService";
 import type { InstrumentInDb, PriceHistoryDailyInDb } from "@/shared/types/apiTypes";
 import { useAppStore } from "@/shared/store/appStore";
 import InstrumentPriceDeferred from "@/components/InstrumentPriceDeferred";
+import { useNavigate } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 
 export const DashboardPage = () => {
     const [instruments, setInstruments] = useState<InstrumentInDb[]>([]);
     const { selectedExchange, setPreviousCloseMap } = useAppStore();
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchInstruments = async () => {
@@ -68,125 +56,69 @@ export const DashboardPage = () => {
     }, [selectedExchange, setPreviousCloseMap]);
 
     return (
-        <div className="flex flex-col gap-6 p-6">
+        <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto w-full">
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
                     <p className="text-muted-foreground">
-                        Market overview and real-time statistics for {selectedExchange || 'All Exchanges'}.
+                        {selectedExchange || 'All Exchanges'} &bull; {instruments.length} Active Instruments
                     </p>
                 </div>
             </div>
 
-            {/* Summary Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                            Active Instruments
-                        </CardTitle>
-                        <Activity className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{instruments.length}</div>
-                        <p className="text-xs text-muted-foreground">
-                            In selected exchange
-                        </p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                            Total Volume
-                        </CardTitle>
-                        <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">--</div>
-                        <p className="text-xs text-muted-foreground">
-                            Real-time volume
-                        </p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                            Market Status
-                        </CardTitle>
-                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-green-600">Open</div>
-                        <p className="text-xs text-muted-foreground">
-                            --
-                        </p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                            Total Value
-                        </CardTitle>
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">--</div>
-                        <p className="text-xs text-muted-foreground">
-                            --
-                        </p>
-                    </CardContent>
-                </Card>
-            </div>
+            <div className="flex flex-col gap-3">
+                {instruments.length > 0 ? (
+                    instruments.map((instrument) => (
+                        <div
+                            key={instrument.id}
+                            onClick={() => navigate(`/stocks/${instrument.symbol}`)}
+                            className="group relative flex items-center justify-between p-4 bg-card hover:bg-accent/50 border rounded-xl shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
+                        >
+                            {/* Status Indicator Bar */}
+                            <div className={`absolute left-0 top-0 bottom-0 w-1 ${!instrument.delisted ? 'bg-gradient-to-b from-green-500 to-emerald-600' : 'bg-red-500'} opacity-80`} />
 
-            {/* Stocks Table */}
-            <Card className="col-span-4">
-                <CardHeader>
-                    <CardTitle>Instruments</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Symbol</TableHead>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Price</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Type ID</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {instruments.length > 0 ? (
-                                instruments.map((instrument) => (
-                                    <TableRow key={instrument.id}>
-                                        <TableCell className="font-medium">
+                            <div className="flex items-center gap-4 pl-3">
+                                <div className="flex flex-col">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-lg font-bold tracking-tight group-hover:text-primary transition-colors">
                                             {instrument.symbol}
-                                        </TableCell>
-                                        <TableCell>{instrument.name}</TableCell>
-                                        <TableCell>
-                                            <InstrumentPriceDeferred
-                                                symbol={instrument.symbol}
-                                                className="text-sm"
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline" className={!instrument.delisted ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}>
-                                                {!instrument.delisted ? "Active" : "Delisted"}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>{instrument.instrument_type_id}</TableCell>
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-center">
-                                        No instruments found for this exchange.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                                        </span>
+                                        {instrument.delisted && (
+                                            <Badge variant="destructive" className="text-[10px] py-0 h-4">Delisted</Badge>
+                                        )}
+                                    </div>
+                                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider truncate max-w-[200px] md:max-w-[300px]">
+                                        {instrument.name}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-6 md:gap-10">
+                                <div className="hidden md:flex flex-col items-end min-w-[80px]">
+                                    <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Type</span>
+                                    <span className="text-sm font-medium">{instrument.instrument_type_id}</span>
+                                </div>
+
+                                <div className="flex flex-col items-end min-w-[100px]">
+                                    <InstrumentPriceDeferred
+                                        symbol={instrument.symbol}
+                                        className="text-lg font-mono font-bold"
+                                    />
+                                </div>
+
+                                <div className="pr-2 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all">
+                                    <ArrowRight className="h-5 w-5" />
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                ) : (
+                    <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed rounded-xl bg-muted/20">
+                        <div className="text-lg font-semibold text-muted-foreground">No instruments found</div>
+                        <p className="text-sm text-muted-foreground/80">Try selecting a different exchange or check back later.</p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
