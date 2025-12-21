@@ -177,3 +177,52 @@ export interface ProviderInstrumentMappingCreate {
 }
 
 export interface ProviderInstrumentMappingInDb extends ProviderInstrumentMappingCreate { }
+
+// Exchange Holiday Types
+export interface ExchangeHolidayCreate {
+    date: string;
+    description?: string | null;
+    is_closed?: boolean;
+    open_time?: string | null;
+    close_time?: string | null;
+    exchange_id: number;
+}
+
+export interface ExchangeHolidayInDb extends ExchangeHolidayCreate {
+    id: number;
+}
+
+export interface ExchangeHolidayUpdate {
+    date?: string | null;
+    description?: string | null;
+    is_closed?: boolean | null;
+    open_time?: string | null;
+    close_time?: string | null;
+}
+
+// Watchlist Types
+export interface WatchlistCreate {
+    name: string;
+}
+
+export interface WatchlistUpdate {
+    name?: string | null;
+}
+
+export interface WatchlistItemCreate {
+    instrument_id: number;
+}
+
+export interface WatchlistItemInDb {
+    id: number;
+    instrument_id: number;
+    watchlist_id: number;
+    instrument?: InstrumentInDb; // Optional, populated if joined
+}
+
+export interface WatchlistInDb {
+    id: number;
+    user_id: number;
+    name: string;
+    items?: WatchlistItemInDb[];
+}

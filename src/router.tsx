@@ -28,13 +28,14 @@ import { InstrumentTypeCreateComponent } from '@/crud_utils/instrument_type/Inst
 import { InstrumentTypeUpdateComponent } from '@/crud_utils/instrument_type/InstrumentTypeUpdate';
 import { InstrumentTypeDeleteComponent } from '@/crud_utils/instrument_type/InstrumentTypeDelete';
 
-// Basic Placeholder for new routes
-const Placeholder = ({ title }: { title: string }) => (
-    <div className="flex h-[50vh] flex-col items-center justify-center gap-2">
-        <h1 className="text-2xl font-bold">{title}</h1>
-        <p className="text-muted-foreground">This feature is coming soon.</p>
-    </div>
-);
+// Exchange Holiday Components
+import { ExchangeHolidayCreateComponent } from "@/crud_utils/exchange_holiday/ExchangeHolidayCreate";
+import { ExchangeHolidayUpdateComponent } from "@/crud_utils/exchange_holiday/ExchangeHolidayUpdate";
+import { ExchangeHolidayDeleteComponent } from "@/crud_utils/exchange_holiday/ExchangeHolidayDelete";
+
+// Watchlist Components
+import { WatchlistPage } from "@/pages/WatchlistPage";
+import { WatchlistDetailPage } from "@/pages/WatchlistDetailPage";
 
 // Layout component that includes the Header and Sidebar
 const Layout = () => {
@@ -92,6 +93,15 @@ export const router = createBrowserRouter([
                         path: "/config",
                         element: <ConfigPage />, // Optional: keep as landing or remove
                     },
+                    // Watchlist routes
+                    {
+                        path: "/watchlist",
+                        element: <WatchlistPage />,
+                    },
+                    {
+                        path: "/watchlist/:id",
+                        element: <WatchlistDetailPage />,
+                    },
                     // Instruments
                     {
                         path: "/config/instruments/create",
@@ -114,6 +124,31 @@ export const router = createBrowserRouter([
                         element: (
                             <ConfigLayout title="Delete Instrument" description="Remove a trading instrument from the system.">
                                 <InstrumentDeleteComponent />
+                            </ConfigLayout>
+                        ),
+                    },
+                    // Exchange Holidays
+                    {
+                        path: "/config/exchange-holidays/create",
+                        element: (
+                            <ConfigLayout title="Create Exchange Holiday" description="Add a new holiday for an exchange.">
+                                <ExchangeHolidayCreateComponent />
+                            </ConfigLayout>
+                        ),
+                    },
+                    {
+                        path: "/config/exchange-holidays/update",
+                        element: (
+                            <ConfigLayout title="Update Exchange Holiday" description="Modify an existing exchange holiday.">
+                                <ExchangeHolidayUpdateComponent />
+                            </ConfigLayout>
+                        ),
+                    },
+                    {
+                        path: "/config/exchange-holidays/delete",
+                        element: (
+                            <ConfigLayout title="Delete Exchange Holiday" description="Remove an exchange holiday.">
+                                <ExchangeHolidayDeleteComponent />
                             </ConfigLayout>
                         ),
                     },
@@ -192,18 +227,6 @@ export const router = createBrowserRouter([
                             </ConfigLayout>
                         ),
                     },
-                    // {
-                    //     path: "/market/overview",
-                    //     element: <Placeholder title="Market Overview" />,
-                    // },
-                    // {
-                    //     path: "/analysis/reports",
-                    //     element: <Placeholder title="Reports" />,
-                    // },
-                    // {
-                    //     path: "/analysis/trends",
-                    //     element: <Placeholder title="Trends" />,
-                    // },
                 ],
             },
         ],

@@ -39,21 +39,11 @@ export const sidebarConfig: SidebarItem[] = [
         title: "Stock Search",
         url: "/stocks",
     },
-    // {
-    //     title: "Analysis",
-    //     url: "#",
-    //     icon: PieChart,
-    //     items: [
-    //         {
-    //             title: "Reports",
-    //             url: "/analysis/reports",
-    //         },
-    //         {
-    //             title: "Trends",
-    //             url: "/analysis/trends",
-    //         }
-    //     ]
-    // },
+    {
+        title: "Watchlist",
+        url: "/watchlist",
+        icon: PieChart, // Using PieChart as placeholder icon or import another one
+    },
     {
         title: "Configuration",
         url: "#",
@@ -66,6 +56,15 @@ export const sidebarConfig: SidebarItem[] = [
                     { title: "Create New", url: "/config/instruments/create" },
                     { title: "Update Existing", url: "/config/instruments/update" },
                     { title: "Delete", url: "/config/instruments/delete" },
+                ]
+            },
+            {
+                title: "Exchange Holidays",
+                url: "#",
+                items: [
+                    { title: "Create New", url: "/config/exchange-holidays/create" },
+                    { title: "Update Existing", url: "/config/exchange-holidays/update" },
+                    { title: "Delete", url: "/config/exchange-holidays/delete" },
                 ]
             },
             {

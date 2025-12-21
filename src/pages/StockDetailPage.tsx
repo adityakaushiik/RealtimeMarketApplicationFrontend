@@ -30,6 +30,7 @@ import { CreateProviderInstrumentMapping } from "@/crud_utils/provider_mapping/C
 import { UpdateProviderInstrumentMapping } from "@/crud_utils/provider_mapping/UpdateProviderInstrumentMapping";
 import { InstrumentUpdateComponent } from "@/crud_utils/instrument/InstrumentUpdate";
 import { InstrumentDeleteComponent } from "@/crud_utils/instrument/InstrumentDelete";
+import { AddToWatchlistDialog } from "@/components/AddToWatchlistDialog";
 
 export function StockDetailPage() {
     const { symbol } = useParams<{ symbol: string }>();
@@ -93,125 +94,130 @@ export function StockDetailPage() {
                         {instrument ? instrument.name : "Real-time market data"}
                     </p>
                 </div>
-                {isAdmin && instrument && (
-                    <>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="icon">
-                                    <Settings className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => setOpenDialog('create')}>
-                                    Create Instrument Mappings
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setOpenDialog('update')}>
-                                    Update Instrument Mappings
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setConfirmRecordingToggle(true)}>
-                                    {instrument.should_record_data ? "Disable Recording" : "Enable Recording"}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setOpenDialog('update_instrument')}>
-                                    Update Instrument
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setOpenDialog('delete_instrument')} className="text-red-600">
-                                    Delete Instrument
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-
-                        <Dialog open={openDialog === 'create'} onOpenChange={(open) => !open && setOpenDialog(null)}>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Create Provider Instrument Mapping</DialogTitle>
-                                </DialogHeader>
-                                <CreateProviderInstrumentMapping
-                                    instrumentId={instrument.id}
-                                    onSuccess={() => {
-                                        ApiService.getInstrumentProviderMappings(instrument.id).then(setMappings);
-                                        setOpenDialog(null);
-                                    }}
-                                />
-                            </DialogContent>
-                        </Dialog>
-
-                        <Dialog open={openDialog === 'update'} onOpenChange={(open) => !open && setOpenDialog(null)}>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Update Provider Instrument Mapping</DialogTitle>
-                                </DialogHeader>
-                                <UpdateProviderInstrumentMapping
-                                    instrumentId={instrument.id}
-                                    onSuccess={() => {
-                                        ApiService.getInstrumentProviderMappings(instrument.id).then(setMappings);
-                                        setOpenDialog(null);
-                                    }}
-                                />
-                            </DialogContent>
-                        </Dialog>
-
-                        <Dialog open={openDialog === 'update_instrument'} onOpenChange={(open) => !open && setOpenDialog(null)}>
-                            <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                    <DialogTitle>Update Instrument</DialogTitle>
-                                </DialogHeader>
-                                <InstrumentUpdateComponent
-                                    initialInstrumentId={instrument.id}
-                                    onUpdateComplete={() => {
-                                        // Refresh instrument details
-                                        ApiService.getInstrumentById(instrument.id).then(setInstrument);
-                                        setOpenDialog(null);
-                                    }}
-                                />
-                            </DialogContent>
-                        </Dialog>
-
-                        <Dialog open={openDialog === 'delete_instrument'} onOpenChange={(open) => !open && setOpenDialog(null)}>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Delete Instrument</DialogTitle>
-                                </DialogHeader>
-                                <InstrumentDeleteComponent
-                                    initialInstrumentId={instrument.id}
-                                    onDeleteComplete={() => {
-                                        setOpenDialog(null);
-                                        // Navigate back to home or search page since instrument is gone
-                                        window.location.href = '/';
-                                    }}
-                                />
-                            </DialogContent>
-                        </Dialog>
-
-                        <Dialog open={confirmRecordingToggle} onOpenChange={setConfirmRecordingToggle}>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>
-                                        {instrument.should_record_data ? "Disable Recording?" : "Enable Recording?"}
-                                    </DialogTitle>
-                                    <DialogDescription>
-                                        {instrument.should_record_data
-                                            ? "Are you sure you want to disable recording? Warning: This will remove all existing recorded data for this instrument."
-                                            : "Are you sure you want to enable recording for this instrument?"}
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <DialogFooter>
-                                    <Button variant="outline" onClick={() => setConfirmRecordingToggle(false)}>Cancel</Button>
-                                    <Button variant={instrument.should_record_data ? "destructive" : "default"} onClick={async () => {
-                                        try {
-                                            const updated = await ApiService.toggleInstrumentRecording(instrument.id, !instrument.should_record_data);
-                                            setInstrument(updated);
-                                            setConfirmRecordingToggle(false);
-                                        } catch (error) {
-                                            console.error("Failed to toggle recording:", error);
-                                        }
-                                    }}>
-                                        Confirm
+                <div className="flex items-center gap-2">
+                    {instrument && (
+                        <AddToWatchlistDialog instrumentId={instrument.id} symbol={instrument.symbol} />
+                    )}
+                    {isAdmin && instrument && (
+                        <>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="icon">
+                                        <Settings className="h-4 w-4" />
                                     </Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
-                    </>
-                )}
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => setOpenDialog('create')}>
+                                        Create Instrument Mappings
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setOpenDialog('update')}>
+                                        Update Instrument Mappings
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setConfirmRecordingToggle(true)}>
+                                        {instrument.should_record_data ? "Disable Recording" : "Enable Recording"}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setOpenDialog('update_instrument')}>
+                                        Update Instrument
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setOpenDialog('delete_instrument')} className="text-red-600">
+                                        Delete Instrument
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
+                            <Dialog open={openDialog === 'create'} onOpenChange={(open) => !open && setOpenDialog(null)}>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Create Provider Instrument Mapping</DialogTitle>
+                                    </DialogHeader>
+                                    <CreateProviderInstrumentMapping
+                                        instrumentId={instrument.id}
+                                        onSuccess={() => {
+                                            ApiService.getInstrumentProviderMappings(instrument.id).then(setMappings);
+                                            setOpenDialog(null);
+                                        }}
+                                    />
+                                </DialogContent>
+                            </Dialog>
+
+                            <Dialog open={openDialog === 'update'} onOpenChange={(open) => !open && setOpenDialog(null)}>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Update Provider Instrument Mapping</DialogTitle>
+                                    </DialogHeader>
+                                    <UpdateProviderInstrumentMapping
+                                        instrumentId={instrument.id}
+                                        onSuccess={() => {
+                                            ApiService.getInstrumentProviderMappings(instrument.id).then(setMappings);
+                                            setOpenDialog(null);
+                                        }}
+                                    />
+                                </DialogContent>
+                            </Dialog>
+
+                            <Dialog open={openDialog === 'update_instrument'} onOpenChange={(open) => !open && setOpenDialog(null)}>
+                                <DialogContent className="max-w-2xl">
+                                    <DialogHeader>
+                                        <DialogTitle>Update Instrument</DialogTitle>
+                                    </DialogHeader>
+                                    <InstrumentUpdateComponent
+                                        initialInstrumentId={instrument.id}
+                                        onUpdateComplete={() => {
+                                            // Refresh instrument details
+                                            ApiService.getInstrumentById(instrument.id).then(setInstrument);
+                                            setOpenDialog(null);
+                                        }}
+                                    />
+                                </DialogContent>
+                            </Dialog>
+
+                            <Dialog open={openDialog === 'delete_instrument'} onOpenChange={(open) => !open && setOpenDialog(null)}>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Delete Instrument</DialogTitle>
+                                    </DialogHeader>
+                                    <InstrumentDeleteComponent
+                                        initialInstrumentId={instrument.id}
+                                        onDeleteComplete={() => {
+                                            setOpenDialog(null);
+                                            // Navigate back to home or search page since instrument is gone
+                                            window.location.href = '/';
+                                        }}
+                                    />
+                                </DialogContent>
+                            </Dialog>
+
+                            <Dialog open={confirmRecordingToggle} onOpenChange={setConfirmRecordingToggle}>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>
+                                            {instrument.should_record_data ? "Disable Recording?" : "Enable Recording?"}
+                                        </DialogTitle>
+                                        <DialogDescription>
+                                            {instrument.should_record_data
+                                                ? "Are you sure you want to disable recording? Warning: This will remove all existing recorded data for this instrument."
+                                                : "Are you sure you want to enable recording for this instrument?"}
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <DialogFooter>
+                                        <Button variant="outline" onClick={() => setConfirmRecordingToggle(false)}>Cancel</Button>
+                                        <Button variant={instrument.should_record_data ? "destructive" : "default"} onClick={async () => {
+                                            try {
+                                                const updated = await ApiService.toggleInstrumentRecording(instrument.id, !instrument.should_record_data);
+                                                setInstrument(updated);
+                                                setConfirmRecordingToggle(false);
+                                            } catch (error) {
+                                                console.error("Failed to toggle recording:", error);
+                                            }
+                                        }}>
+                                            Confirm
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        </>
+                    )}
+                </div>
             </div>
 
             <div className="h-[600px] w-full">
