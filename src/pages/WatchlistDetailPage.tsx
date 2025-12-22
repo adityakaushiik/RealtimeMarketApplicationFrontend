@@ -111,20 +111,20 @@ export function WatchlistDetailPage() {
     }
 
     return (
-        <div className="container mx-auto py-8">
-            <Button variant="ghost" onClick={() => navigate("/watchlist")} className="mb-4">
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Watchlists
+        <div className="page-container">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/watchlist")} className="mb-4 -ml-2 sm:-ml-3 text-sm">
+                <ArrowLeft className="mr-1.5 sm:mr-2 h-4 w-4" /> Back to Watchlists
             </Button>
 
-            <div className="flex justify-between items-start mb-8">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight mb-2">{watchlist.name}</h1>
-                    <p className="text-muted-foreground">{watchlist.items?.length || 0} items</p>
+            <div className="page-header-row">
+                <div className="page-header" style={{ marginBottom: 0 }}>
+                    <h1 className="page-title">{watchlist.name}</h1>
+                    <p className="page-subtitle">{watchlist.items?.length || 0} items</p>
                 </div>
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="icon">
+                        <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
                             <MoreVertical className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
@@ -139,29 +139,29 @@ export function WatchlistDetailPage() {
                 </DropdownMenu>
             </div>
 
-            <div className="space-y-4">
+            <div className="flex flex-col gap-2 sm:gap-3 mt-4 sm:mt-6">
                 {watchlist.items && watchlist.items.length === 0 ? (
-                    <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                        <p className="text-muted-foreground">This watchlist is empty.</p>
-                        <Button variant="link" onClick={() => navigate("/stocks")}>
+                    <div className="text-center py-10 sm:py-12 border-2 border-dashed rounded-lg">
+                        <p className="text-sm sm:text-base text-muted-foreground">This watchlist is empty.</p>
+                        <Button variant="link" size="sm" onClick={() => navigate("/stocks")} className="mt-2">
                             Search for stocks to add
                         </Button>
                     </div>
                 ) : (
-                    <div className="grid gap-4">
+                    <div className="grid gap-2 sm:gap-3">
                         {watchlist.items?.map((item) => {
                             const inst = instruments.get(item.instrument_id);
                             return (
-                                <div key={item.id} className="flex items-center justify-between p-4 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow">
-                                    <div className="flex flex-col cursor-pointer" onClick={() => inst && navigate(`/stocks/${inst.symbol}`)}>
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-bold text-lg">{inst?.symbol || `ID: ${item.instrument_id}`}</span>
-                                            {inst?.delisted && <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">Delisted</span>}
+                                <div key={item.id} className="flex items-center justify-between p-3 sm:p-4 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow">
+                                    <div className="flex flex-col cursor-pointer min-w-0 flex-1" onClick={() => inst && navigate(`/stocks/${inst.symbol}`)}>
+                                        <div className="flex items-center gap-1.5 sm:gap-2">
+                                            <span className="font-bold text-base sm:text-lg">{inst?.symbol || `ID: ${item.instrument_id}`}</span>
+                                            {inst?.delisted && <span className="text-[10px] sm:text-xs bg-red-100 text-red-800 px-1.5 sm:px-2 py-0.5 rounded">Delisted</span>}
                                         </div>
-                                        <span className="text-sm text-muted-foreground">{inst?.name || 'Loading...'}</span>
+                                        <span className="text-xs sm:text-sm text-muted-foreground truncate">{inst?.name || 'Loading...'}</span>
                                     </div>
-                                    <div className="flex items-center gap-4">
-                                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive transition-colors" onClick={() => handleRemoveItem(item.instrument_id)}>
+                                    <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors" onClick={() => handleRemoveItem(item.instrument_id)}>
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
                                     </div>

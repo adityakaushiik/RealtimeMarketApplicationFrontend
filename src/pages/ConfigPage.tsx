@@ -56,39 +56,39 @@ export const ConfigPage = () => {
     }
 
     return (
-        <div className="container mx-auto p-6 max-w-7xl">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold tracking-tight">System Configuration</h1>
-                <p className="text-muted-foreground mt-2">
+        <div className="page-container">
+            <div className="page-header">
+                <h1 className="page-title">System Configuration</h1>
+                <p className="page-subtitle">
                     Manage system resources, entities, and global settings.
                 </p>
             </div>
 
             {/* Top Level Tabs: Entities */}
             <Tabs defaultValue="instruments" className="w-full">
-                <div className="mb-8 border-b">
-                    <TabsList className="w-full justify-start h-auto bg-transparent p-0 gap-6">
+                <div className="mb-4 sm:mb-6 lg:mb-8 border-b overflow-x-auto hide-scrollbar">
+                    <TabsList className="w-max min-w-full sm:w-full justify-start h-auto bg-transparent p-0 gap-2 sm:gap-4 lg:gap-6">
                         <TabsTrigger
                             value="instruments"
-                            className="text-lg py-3 px-1 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
+                            className="text-sm sm:text-base lg:text-lg py-2 sm:py-3 px-1 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none whitespace-nowrap"
                         >
                             Instruments
                         </TabsTrigger>
                         <TabsTrigger
                             value="providers"
-                            className="text-lg py-3 px-1 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
+                            className="text-sm sm:text-base lg:text-lg py-2 sm:py-3 px-1 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none whitespace-nowrap"
                         >
                             Providers
                         </TabsTrigger>
                         <TabsTrigger
                             value="sectors"
-                            className="text-lg py-3 px-1 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
+                            className="text-sm sm:text-base lg:text-lg py-2 sm:py-3 px-1 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none whitespace-nowrap"
                         >
                             Sectors
                         </TabsTrigger>
                         <TabsTrigger
                             value="instrument_types"
-                            className="text-lg py-3 px-1 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
+                            className="text-sm sm:text-base lg:text-lg py-2 sm:py-3 px-1 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none whitespace-nowrap"
                         >
                             Instrument Types
                         </TabsTrigger>
@@ -97,29 +97,29 @@ export const ConfigPage = () => {
 
                 {/* Instruments Section */}
                 <TabsContent value="instruments" className="mt-0">
-                    <div className="flex flex-col lg:flex-row gap-8">
-                        <Tabs defaultValue="create" orientation="vertical" className="w-full flex flex-col lg:flex-row gap-8">
-                            <aside className="lg:w-64 shrink-0">
-                                <TabsList className="flex flex-row lg:flex-col w-full h-auto justify-start bg-muted/50 p-1 gap-1 rounded-lg">
-                                    <TabsTrigger value="create" className="w-full justify-start px-3 py-2">Create New</TabsTrigger>
-                                    <TabsTrigger value="update" className="w-full justify-start px-3 py-2">Update Existing</TabsTrigger>
-                                    <TabsTrigger value="delete" className="w-full justify-start px-3 py-2">Delete</TabsTrigger>
+                    <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
+                        <Tabs defaultValue="create" orientation="vertical" className="w-full flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
+                            <aside className="lg:w-56 xl:w-64 shrink-0">
+                                <TabsList className="flex flex-row lg:flex-col w-full h-auto justify-start bg-muted/50 p-1 gap-1 rounded-lg overflow-x-auto hide-scrollbar">
+                                    <TabsTrigger value="create" className="flex-1 lg:flex-none lg:w-full justify-center lg:justify-start px-3 py-2 text-xs sm:text-sm whitespace-nowrap">Create New</TabsTrigger>
+                                    <TabsTrigger value="update" className="flex-1 lg:flex-none lg:w-full justify-center lg:justify-start px-3 py-2 text-xs sm:text-sm whitespace-nowrap">Update Existing</TabsTrigger>
+                                    <TabsTrigger value="delete" className="flex-1 lg:flex-none lg:w-full justify-center lg:justify-start px-3 py-2 text-xs sm:text-sm whitespace-nowrap">Delete</TabsTrigger>
                                 </TabsList>
                             </aside>
                             <div className="flex-1">
                                 <Card className="border-none shadow-none bg-transparent">
                                     <CardHeader className="px-0 pt-0">
-                                        <CardTitle>Manage Instruments</CardTitle>
-                                        <CardDescription>Add, modify, or remove trading instruments from the system.</CardDescription>
+                                        <CardTitle className="text-base sm:text-lg">Manage Instruments</CardTitle>
+                                        <CardDescription className="text-xs sm:text-sm">Add, modify, or remove trading instruments from the system.</CardDescription>
                                     </CardHeader>
                                     <CardContent className="px-0">
-                                        <TabsContent value="create" className="mt-0 p-6 border rounded-lg bg-card shadow-sm">
+                                        <TabsContent value="create" className="mt-0 p-4 sm:p-6 border rounded-lg bg-card shadow-sm">
                                             <InstrumentCreateComponent />
                                         </TabsContent>
-                                        <TabsContent value="update" className="mt-0 p-6 border rounded-lg bg-card shadow-sm">
+                                        <TabsContent value="update" className="mt-0 p-4 sm:p-6 border rounded-lg bg-card shadow-sm">
                                             <InstrumentUpdateComponent />
                                         </TabsContent>
-                                        <TabsContent value="delete" className="mt-0 p-6 border rounded-lg bg-card shadow-sm">
+                                        <TabsContent value="delete" className="mt-0 p-4 sm:p-6 border rounded-lg bg-card shadow-sm">
                                             <InstrumentDeleteComponent />
                                         </TabsContent>
                                     </CardContent>
@@ -131,29 +131,29 @@ export const ConfigPage = () => {
 
                 {/* Providers Section */}
                 <TabsContent value="providers" className="mt-0">
-                    <div className="flex flex-col lg:flex-row gap-8">
-                        <Tabs defaultValue="create" orientation="vertical" className="w-full flex flex-col lg:flex-row gap-8">
-                            <aside className="lg:w-64 shrink-0">
-                                <TabsList className="flex flex-row lg:flex-col w-full h-auto justify-start bg-muted/50 p-1 gap-1 rounded-lg">
-                                    <TabsTrigger value="create" className="w-full justify-start px-3 py-2">Create New</TabsTrigger>
-                                    <TabsTrigger value="update" className="w-full justify-start px-3 py-2">Update Existing</TabsTrigger>
-                                    <TabsTrigger value="delete" className="w-full justify-start px-3 py-2">Delete</TabsTrigger>
+                    <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
+                        <Tabs defaultValue="create" orientation="vertical" className="w-full flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
+                            <aside className="lg:w-56 xl:w-64 shrink-0">
+                                <TabsList className="flex flex-row lg:flex-col w-full h-auto justify-start bg-muted/50 p-1 gap-1 rounded-lg overflow-x-auto hide-scrollbar">
+                                    <TabsTrigger value="create" className="flex-1 lg:flex-none lg:w-full justify-center lg:justify-start px-3 py-2 text-xs sm:text-sm whitespace-nowrap">Create New</TabsTrigger>
+                                    <TabsTrigger value="update" className="flex-1 lg:flex-none lg:w-full justify-center lg:justify-start px-3 py-2 text-xs sm:text-sm whitespace-nowrap">Update Existing</TabsTrigger>
+                                    <TabsTrigger value="delete" className="flex-1 lg:flex-none lg:w-full justify-center lg:justify-start px-3 py-2 text-xs sm:text-sm whitespace-nowrap">Delete</TabsTrigger>
                                 </TabsList>
                             </aside>
                             <div className="flex-1">
                                 <Card className="border-none shadow-none bg-transparent">
                                     <CardHeader className="px-0 pt-0">
-                                        <CardTitle>Manage Providers</CardTitle>
-                                        <CardDescription>Configure market data providers and API credentials.</CardDescription>
+                                        <CardTitle className="text-base sm:text-lg">Manage Providers</CardTitle>
+                                        <CardDescription className="text-xs sm:text-sm">Configure market data providers and API credentials.</CardDescription>
                                     </CardHeader>
                                     <CardContent className="px-0">
-                                        <TabsContent value="create" className="mt-0 p-6 border rounded-lg bg-card shadow-sm">
+                                        <TabsContent value="create" className="mt-0 p-4 sm:p-6 border rounded-lg bg-card shadow-sm">
                                             <ProviderCreateComponent />
                                         </TabsContent>
-                                        <TabsContent value="update" className="mt-0 p-6 border rounded-lg bg-card shadow-sm">
+                                        <TabsContent value="update" className="mt-0 p-4 sm:p-6 border rounded-lg bg-card shadow-sm">
                                             <ProviderUpdateComponent />
                                         </TabsContent>
-                                        <TabsContent value="delete" className="mt-0 p-6 border rounded-lg bg-card shadow-sm">
+                                        <TabsContent value="delete" className="mt-0 p-4 sm:p-6 border rounded-lg bg-card shadow-sm">
                                             <ProviderDeleteComponent />
                                         </TabsContent>
                                     </CardContent>
@@ -165,29 +165,29 @@ export const ConfigPage = () => {
 
                 {/* Sectors Section */}
                 <TabsContent value="sectors" className="mt-0">
-                    <div className="flex flex-col lg:flex-row gap-8">
-                        <Tabs defaultValue="create" orientation="vertical" className="w-full flex flex-col lg:flex-row gap-8">
-                            <aside className="lg:w-64 shrink-0">
-                                <TabsList className="flex flex-row lg:flex-col w-full h-auto justify-start bg-muted/50 p-1 gap-1 rounded-lg">
-                                    <TabsTrigger value="create" className="w-full justify-start px-3 py-2">Create New</TabsTrigger>
-                                    <TabsTrigger value="update" className="w-full justify-start px-3 py-2">Update Existing</TabsTrigger>
-                                    <TabsTrigger value="delete" className="w-full justify-start px-3 py-2">Delete</TabsTrigger>
+                    <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
+                        <Tabs defaultValue="create" orientation="vertical" className="w-full flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
+                            <aside className="lg:w-56 xl:w-64 shrink-0">
+                                <TabsList className="flex flex-row lg:flex-col w-full h-auto justify-start bg-muted/50 p-1 gap-1 rounded-lg overflow-x-auto hide-scrollbar">
+                                    <TabsTrigger value="create" className="flex-1 lg:flex-none lg:w-full justify-center lg:justify-start px-3 py-2 text-xs sm:text-sm whitespace-nowrap">Create New</TabsTrigger>
+                                    <TabsTrigger value="update" className="flex-1 lg:flex-none lg:w-full justify-center lg:justify-start px-3 py-2 text-xs sm:text-sm whitespace-nowrap">Update Existing</TabsTrigger>
+                                    <TabsTrigger value="delete" className="flex-1 lg:flex-none lg:w-full justify-center lg:justify-start px-3 py-2 text-xs sm:text-sm whitespace-nowrap">Delete</TabsTrigger>
                                 </TabsList>
                             </aside>
                             <div className="flex-1">
                                 <Card className="border-none shadow-none bg-transparent">
                                     <CardHeader className="px-0 pt-0">
-                                        <CardTitle>Manage Sectors</CardTitle>
-                                        <CardDescription>Organize assets into market sectors.</CardDescription>
+                                        <CardTitle className="text-base sm:text-lg">Manage Sectors</CardTitle>
+                                        <CardDescription className="text-xs sm:text-sm">Organize assets into market sectors.</CardDescription>
                                     </CardHeader>
                                     <CardContent className="px-0">
-                                        <TabsContent value="create" className="mt-0 p-6 border rounded-lg bg-card shadow-sm">
+                                        <TabsContent value="create" className="mt-0 p-4 sm:p-6 border rounded-lg bg-card shadow-sm">
                                             <SectorCreateComponent />
                                         </TabsContent>
-                                        <TabsContent value="update" className="mt-0 p-6 border rounded-lg bg-card shadow-sm">
+                                        <TabsContent value="update" className="mt-0 p-4 sm:p-6 border rounded-lg bg-card shadow-sm">
                                             <SectorUpdateComponent />
                                         </TabsContent>
-                                        <TabsContent value="delete" className="mt-0 p-6 border rounded-lg bg-card shadow-sm">
+                                        <TabsContent value="delete" className="mt-0 p-4 sm:p-6 border rounded-lg bg-card shadow-sm">
                                             <SectorDeleteComponent />
                                         </TabsContent>
                                     </CardContent>
@@ -199,29 +199,29 @@ export const ConfigPage = () => {
 
                 {/* Instrument Types Section */}
                 <TabsContent value="instrument_types" className="mt-0">
-                    <div className="flex flex-col lg:flex-row gap-8">
-                        <Tabs defaultValue="create" orientation="vertical" className="w-full flex flex-col lg:flex-row gap-8">
-                            <aside className="lg:w-64 shrink-0">
-                                <TabsList className="flex flex-row lg:flex-col w-full h-auto justify-start bg-muted/50 p-1 gap-1 rounded-lg">
-                                    <TabsTrigger value="create" className="w-full justify-start px-3 py-2">Create New</TabsTrigger>
-                                    <TabsTrigger value="update" className="w-full justify-start px-3 py-2">Update Existing</TabsTrigger>
-                                    <TabsTrigger value="delete" className="w-full justify-start px-3 py-2">Delete</TabsTrigger>
+                    <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
+                        <Tabs defaultValue="create" orientation="vertical" className="w-full flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
+                            <aside className="lg:w-56 xl:w-64 shrink-0">
+                                <TabsList className="flex flex-row lg:flex-col w-full h-auto justify-start bg-muted/50 p-1 gap-1 rounded-lg overflow-x-auto hide-scrollbar">
+                                    <TabsTrigger value="create" className="flex-1 lg:flex-none lg:w-full justify-center lg:justify-start px-3 py-2 text-xs sm:text-sm whitespace-nowrap">Create New</TabsTrigger>
+                                    <TabsTrigger value="update" className="flex-1 lg:flex-none lg:w-full justify-center lg:justify-start px-3 py-2 text-xs sm:text-sm whitespace-nowrap">Update Existing</TabsTrigger>
+                                    <TabsTrigger value="delete" className="flex-1 lg:flex-none lg:w-full justify-center lg:justify-start px-3 py-2 text-xs sm:text-sm whitespace-nowrap">Delete</TabsTrigger>
                                 </TabsList>
                             </aside>
                             <div className="flex-1">
                                 <Card className="border-none shadow-none bg-transparent">
                                     <CardHeader className="px-0 pt-0">
-                                        <CardTitle>Manage Instrument Types</CardTitle>
-                                        <CardDescription>Define types and categories for instruments.</CardDescription>
+                                        <CardTitle className="text-base sm:text-lg">Manage Instrument Types</CardTitle>
+                                        <CardDescription className="text-xs sm:text-sm">Define types and categories for instruments.</CardDescription>
                                     </CardHeader>
                                     <CardContent className="px-0">
-                                        <TabsContent value="create" className="mt-0 p-6 border rounded-lg bg-card shadow-sm">
+                                        <TabsContent value="create" className="mt-0 p-4 sm:p-6 border rounded-lg bg-card shadow-sm">
                                             <InstrumentTypeCreateComponent />
                                         </TabsContent>
-                                        <TabsContent value="update" className="mt-0 p-6 border rounded-lg bg-card shadow-sm">
+                                        <TabsContent value="update" className="mt-0 p-4 sm:p-6 border rounded-lg bg-card shadow-sm">
                                             <InstrumentTypeUpdateComponent />
                                         </TabsContent>
-                                        <TabsContent value="delete" className="mt-0 p-6 border rounded-lg bg-card shadow-sm">
+                                        <TabsContent value="delete" className="mt-0 p-4 sm:p-6 border rounded-lg bg-card shadow-sm">
                                             <InstrumentTypeDeleteComponent />
                                         </TabsContent>
                                     </CardContent>

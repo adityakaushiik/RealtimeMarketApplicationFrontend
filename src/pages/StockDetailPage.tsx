@@ -86,11 +86,11 @@ export function StockDetailPage() {
     }
 
     return (
-        <div className="space-y-6 p-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">{symbol}</h1>
-                    <p className="text-muted-foreground">
+        <div className="page-container flex flex-col section-gap">
+            <div className="page-header-row">
+                <div className="page-header" style={{ marginBottom: 0 }}>
+                    <h1 className="page-title">{symbol}</h1>
+                    <p className="page-subtitle">
                         {instrument ? instrument.name : "Real-time market data"}
                     </p>
                 </div>
@@ -220,20 +220,18 @@ export function StockDetailPage() {
                 </div>
             </div>
 
-            <div className="h-[600px] w-full">
-                <Chart symbol={symbol} />
-            </div>
+            <Chart symbol={symbol} />
 
             {
                 mappings.length > 0 && (
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Provider Mappings</CardTitle>
+                        <CardHeader className="p-4 sm:p-6">
+                            <CardTitle className="text-base sm:text-lg">Provider Mappings</CardTitle>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
                             <div className="flex flex-wrap gap-2">
                                 {mappings.map((m, idx) => (
-                                    <div key={idx} className="bg-muted px-3 py-1 rounded text-sm">
+                                    <div key={idx} className="bg-muted px-2 sm:px-3 py-1 rounded text-xs sm:text-sm">
                                         <span className="font-semibold">ID {m.provider_id}:</span> {m.provider_instrument_search_code}
                                     </div>
                                 ))}
@@ -243,57 +241,57 @@ export function StockDetailPage() {
                 )
             }
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="stats-grid">
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-4 pb-1 sm:pb-2">
+                        <CardTitle className="text-xs sm:text-sm font-medium">
                             Status
                         </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">
+                    <CardContent className="p-3 sm:p-4 pt-0">
+                        <div className="text-lg sm:text-2xl font-bold">
                             {instrument ? (instrument.delisted ? "Delisted" : "Active") : "--"}
                         </div>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">
                             {instrument ? (instrument.blacklisted ? "Blacklisted" : "Tradable") : ""}
                         </p>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-4 pb-1 sm:pb-2">
+                        <CardTitle className="text-xs sm:text-sm font-medium">
                             Type ID
                         </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{instrument?.instrument_type_id || "--"}</div>
-                        <p className="text-xs text-muted-foreground">
+                    <CardContent className="p-3 sm:p-4 pt-0">
+                        <div className="text-lg sm:text-2xl font-bold">{instrument?.instrument_type_id || "--"}</div>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">
                             Instrument Type
                         </p>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-4 pb-1 sm:pb-2">
+                        <CardTitle className="text-xs sm:text-sm font-medium">
                             Exchange ID
                         </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{instrument?.exchange_id || "--"}</div>
-                        <p className="text-xs text-muted-foreground">
+                    <CardContent className="p-3 sm:p-4 pt-0">
+                        <div className="text-lg sm:text-2xl font-bold">{instrument?.exchange_id || "--"}</div>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">
                             Exchange
                         </p>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-4 pb-1 sm:pb-2">
+                        <CardTitle className="text-xs sm:text-sm font-medium">
                             Sector ID
                         </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{instrument?.sector_id || "--"}</div>
-                        <p className="text-xs text-muted-foreground">
+                    <CardContent className="p-3 sm:p-4 pt-0">
+                        <div className="text-lg sm:text-2xl font-bold">{instrument?.sector_id || "--"}</div>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">
                             Sector
                         </p>
                     </CardContent>

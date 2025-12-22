@@ -4,13 +4,13 @@ import { LoginForm } from "@/components/login-form";
 export default function LoginPage() {
     return (
         <div className="grid min-h-svh lg:grid-cols-2">
-            <div className="flex flex-col gap-4 p-6 md:p-10">
+            <div className="flex flex-col gap-4 p-4 sm:p-6 md:p-10">
                 <div className="flex justify-center gap-2 md:justify-start">
                     <a href="#" className="flex items-center gap-2 font-medium">
                         <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
                             <GalleryVerticalEnd className="size-4" />
                         </div>
-                        MarketRealtime
+                        <span className="text-sm sm:text-base">MarketRealtime</span>
                     </a>
                 </div>
                 <div className="flex flex-1 items-center justify-center">
@@ -22,8 +22,8 @@ export default function LoginPage() {
             <div className="bg-muted relative hidden lg:block">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-background flex items-center justify-center">
                     <div className="text-center space-y-4 p-8">
-                        <h2 className="text-4xl font-bold">Real-time Market Data</h2>
-                        <p className="text-xl text-muted-foreground">
+                        <h2 className="text-3xl xl:text-4xl font-bold">Real-time Market Data</h2>
+                        <p className="text-lg xl:text-xl text-muted-foreground">
                             Track stocks, analyze trends, and make informed decisions.
                         </p>
                     </div>

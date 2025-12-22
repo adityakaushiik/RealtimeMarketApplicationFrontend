@@ -68,6 +68,15 @@ export const sidebarConfig: SidebarItem[] = [
                 ]
             },
             {
+                title: "Exchanges",
+                url: "#",
+                items: [
+                    { title: "Create New", url: "/config/exchanges/create" },
+                    { title: "Update Existing", url: "/config/exchanges/update" },
+                    { title: "Delete", url: "/config/exchanges/delete" },
+                ]
+            },
+            {
                 title: "Providers",
                 url: "#",
                 items: [

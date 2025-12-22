@@ -119,3 +119,202 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* ======================================
+   DESIGN SYSTEM - SPACING TOKENS
+   ====================================== */
+
+:root {
+    /* Page spacing tokens */
+    --page-padding-x: 1rem;
+    --page-padding-y: 1.5rem;
+    --page-gap: 1.5rem;
+    --section-gap: 1.5rem;
+    --card-gap: 1rem;
+    --container-max-width: 80rem;
+    
+    /* Header spacing */
+    --header-height: 4rem;
+    --header-padding-x: 1rem;
+}
+
+@media (min-width: 640px) {
+    :root {
+        --page-padding-x: 1.5rem;
+        --page-padding-y: 2rem;
+        --page-gap: 1.5rem;
+        --section-gap: 2rem;
+        --header-padding-x: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    :root {
+        --page-padding-x: 2rem;
+        --page-padding-y: 2rem;
+        --page-gap: 2rem;
+        --section-gap: 2rem;
+    }
+}
+
+/* ======================================
+   UTILITY CLASSES
+   ====================================== */
+
+@layer utilities {
+    /* Page container utility */
+    .page-container {
+        @apply w-full mx-auto;
+        padding-left: var(--page-padding-x);
+        padding-right: var(--page-padding-x);
+        padding-top: var(--page-padding-y);
+        padding-bottom: var(--page-padding-y);
+        max-width: var(--container-max-width);
+    }
+    
+    /* Page header styling */
+    .page-header {
+        @apply flex flex-col gap-1;
+        margin-bottom: var(--section-gap);
+    }
+    
+    .page-header-row {
+        @apply flex flex-col gap-3;
+    }
+    
+    @media (min-width: 640px) {
+        .page-header-row {
+            @apply flex-row items-center justify-between;
+        }
+    }
+    
+    .page-title {
+        @apply text-2xl font-bold tracking-tight;
+    }
+    
+    @media (min-width: 640px) {
+        .page-title {
+            @apply text-3xl;
+        }
+    }
+    
+    .page-subtitle {
+        @apply text-sm text-muted-foreground;
+    }
+    
+    @media (min-width: 640px) {
+        .page-subtitle {
+            @apply text-base;
+        }
+    }
+    
+    /* Section spacing */
+    .section-gap {
+        gap: var(--section-gap);
+    }
+    
+    .card-gap {
+        gap: var(--card-gap);
+    }
+    
+    /* Responsive grid layouts */
+    .card-grid {
+        @apply grid grid-cols-1 gap-4;
+    }
+    
+    @media (min-width: 640px) {
+        .card-grid {
+            @apply grid-cols-2;
+        }
+    }
+    
+    @media (min-width: 1024px) {
+        .card-grid {
+            @apply grid-cols-3;
+        }
+    }
+    
+    @media (min-width: 1280px) {
+        .card-grid {
+            @apply grid-cols-4;
+        }
+    }
+    
+    /* Stats grid (2-4 columns) */
+    .stats-grid {
+        @apply grid grid-cols-2 gap-3;
+    }
+    
+    @media (min-width: 768px) {
+        .stats-grid {
+            @apply grid-cols-4 gap-4;
+        }
+    }
+    
+    /* Custom scrollbar styling */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-track {
+        @apply bg-transparent;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        @apply bg-border rounded-full;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        @apply bg-muted-foreground/50;
+    }
+    
+    /* Hide scrollbar on mobile for horizontal scrolls */
+    .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    
+    .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    
+    /* Responsive text utilities */
+    .text-responsive-sm {
+        @apply text-xs;
+    }
+    
+    @media (min-width: 640px) {
+        .text-responsive-sm {
+            @apply text-sm;
+        }
+    }
+    
+    .text-responsive-base {
+        @apply text-sm;
+    }
+    
+    @media (min-width: 640px) {
+        .text-responsive-base {
+            @apply text-base;
+        }
+    }
+    
+    /* Chart container responsive height */
+    .chart-container {
+        @apply w-full rounded-lg border overflow-hidden bg-background shadow-sm;
+        height: 350px;
+    }
+    
+    @media (min-width: 640px) {
+        .chart-container {
+            height: 450px;
+        }
+    }
+    
+    @media (min-width: 1024px) {
+        .chart-container {
+            height: 500px;
+        }
+    }
+}

@@ -1,7 +1,7 @@
 import type {
     LoginRequest, LoginResponse, UserWithPassword, UserInDb,
     InstrumentInDb, InstrumentCreate, InstrumentUpdate,
-    ExchangeInDb, ExchangeCreate,
+    ExchangeInDb, ExchangeCreate, ExchangeUpdate,
     ProviderInDb, ProviderCreate,
     PriceHistoryDailyInDb, PriceHistoryIntradayInDb,
     SectorInDb, SectorCreate, SectorUpdate, ProviderUpdate,
@@ -12,7 +12,8 @@ import type {
     WatchlistItemCreate, WatchlistItemInDb
 } from '../types/apiTypes';
 
-const BASE_URL = 'https://realtimestockmarket.onrender.com'; // Adjust as needed
+const BASE_URL = 'http://localhost:8000'; // Adjust as needed
+// const BASE_URL = 'https://realtimestockmarket.onrender.com'; // Adjust as needed
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';
 
@@ -186,10 +187,33 @@ export class ApiService {
     }
 
     static async createExchange(data: ExchangeCreate): Promise<ExchangeInDb> {
-        return this.request<ExchangeInDb>('/exchange/', {
+        const response = await this.request<ExchangeInDb>('/exchange/', {
             method: 'POST',
             body: JSON.stringify(data),
         });
+        this.invalidateCache('/exchange/');
+        return response;
+    }
+
+    static async getExchangeById(id: number): Promise<ExchangeInDb> {
+        return this.getCached<ExchangeInDb>(`/exchange/${id}`);
+    }
+
+    static async updateExchange(id: number, data: ExchangeUpdate): Promise<ExchangeInDb> {
+        const response = await this.request<ExchangeInDb>(`/exchange/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+        this.invalidateCache('/exchange/');
+        this.invalidateCache(`/exchange/${id}`);
+        return response;
+    }
+
+    static async deleteExchange(id: number): Promise<void> {
+        await this.request<void>(`/exchange/${id}`, {
+            method: 'DELETE',
+        });
+        this.invalidateCache('/exchange/');
     }
 
     // Providers

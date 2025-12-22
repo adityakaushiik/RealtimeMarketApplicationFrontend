@@ -5,6 +5,22 @@ export interface ExchangeCreate {
     timezone?: string | null;
     country?: string | null;
     currency?: string | null;
+    pre_market_open_time?: string | null;
+    market_open_time?: string | null;
+    market_close_time?: string | null;
+    post_market_close_time?: string | null;
+}
+
+export interface ExchangeUpdate {
+    name?: string | null;
+    code?: string | null;
+    timezone?: string | null;
+    country?: string | null;
+    currency?: string | null;
+    pre_market_open_time?: string | null;
+    market_open_time?: string | null;
+    market_close_time?: string | null;
+    post_market_close_time?: string | null;
 }
 
 export interface ExchangeInDb extends ExchangeCreate {

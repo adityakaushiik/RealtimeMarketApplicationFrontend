@@ -38,18 +38,20 @@ export function WatchlistPage() {
     }, []);
 
     return (
-        <div className="container mx-auto py-8">
-            <div className="flex justify-between items-center mb-8">
-                <div className="space-y-1">
-                    <h1 className="text-3xl font-bold tracking-tight">Your Watchlists</h1>
-                    <p className="text-muted-foreground">
+        <div className="page-container">
+            <div className="page-header-row">
+                <div className="page-header">
+                    <h1 className="page-title">Your Watchlists</h1>
+                    <p className="page-subtitle">
                         Manage and view your favorite collections of stocks.
                     </p>
                 </div>
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button>
-                            <Plus className="mr-2 h-4 w-4" /> Create Watchlist
+                        <Button size="sm" className="sm:size-default">
+                            <Plus className="mr-1.5 sm:mr-2 h-4 w-4" />
+                            <span className="hidden sm:inline">Create Watchlist</span>
+                            <span className="sm:hidden">New</span>
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
@@ -68,14 +70,14 @@ export function WatchlistPage() {
             </div>
 
             {loading ? (
-                <div className="flex items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <div className="flex items-center justify-center py-10 sm:py-12">
+                    <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary"></div>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="card-grid">
                     {watchlists.length === 0 && (
-                        <div className="col-span-full text-center py-12 text-muted-foreground">
-                            You don't have any watchlists yet. Create one to get started!
+                        <div className="col-span-full text-center py-10 sm:py-12 text-muted-foreground">
+                            <p className="text-sm sm:text-base">You don't have any watchlists yet. Create one to get started!</p>
                         </div>
                     )}
                     {watchlists.map((watchlist) => (
@@ -84,17 +86,17 @@ export function WatchlistPage() {
                             className="group relative cursor-pointer hover:shadow-lg transition-all duration-300 border-border/50 bg-card/50 backdrop-blur"
                             onClick={() => navigate(`/watchlist/${watchlist.id}`)}
                         >
-                            <CardHeader>
-                                <CardTitle className="flex justify-between items-center">
+                            <CardHeader className="p-4 sm:p-6">
+                                <CardTitle className="flex justify-between items-center text-base sm:text-lg">
                                     <span className="truncate">{watchlist.name}</span>
-                                    <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                                 </CardTitle>
-                                <CardDescription>
+                                <CardDescription className="text-xs sm:text-sm">
                                     Created by you
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent>
-                                <div className="text-sm text-muted-foreground">
+                            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+                                <div className="text-xs sm:text-sm text-muted-foreground">
                                     {watchlist.items ? `${watchlist.items.length} items` : 'View items'}
                                 </div>
                             </CardContent>

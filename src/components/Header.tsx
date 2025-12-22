@@ -55,30 +55,30 @@ export function Header() {
     }, [selectedExchange, setSelectedExchange]);
 
     return (
-        <header className="flex items-center justify-between px-6 py-4 border-b bg-background w-full">
-            <div className="flex items-center gap-4">
+        <header className="flex items-center justify-between px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-b bg-background w-full">
+            <div className="flex items-center gap-2 sm:gap-4">
                 <SidebarTrigger />
-                <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                <h1 className="text-base sm:text-lg lg:text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent hidden sm:block">
                     MarketRealtime
                 </h1>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
                 <Select
                     value={selectedExchange || ""}
                     onValueChange={(value) => setSelectedExchange(value)}
                 >
-                    <SelectTrigger className="w-[240px]">
-                        <SelectValue placeholder="Select Exchange" />
+                    <SelectTrigger className="w-[100px] sm:w-[160px] lg:w-[240px] h-8 sm:h-9 text-xs sm:text-sm">
+                        <SelectValue placeholder="Exchange" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectGroup>
-                            <SelectLabel>Exchanges</SelectLabel>
+                            <SelectLabel className="text-xs">Exchanges</SelectLabel>
                             {exchanges.map((exchange) => (
                                 <SelectItem key={exchange.id} value={exchange.code}>
                                     <div className="flex items-center gap-2">
-                                        <span className="font-medium">{exchange.code}</span>
-                                        <span className="text-muted-foreground text-xs truncate max-w-[100px]">
+                                        <span className="font-medium text-xs sm:text-sm">{exchange.code}</span>
+                                        <span className="text-muted-foreground text-[10px] sm:text-xs truncate max-w-[60px] sm:max-w-[100px] hidden sm:inline">
                                             {exchange.name}
                                         </span>
                                     </div>
@@ -93,8 +93,9 @@ export function Header() {
                     size="icon"
                     onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                     title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                    className="h-8 w-8 sm:h-9 sm:w-9"
                 >
-                    {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                    {theme === "dark" ? <Sun className="h-4 w-4 sm:h-5 sm:w-5" /> : <Moon className="h-4 w-4 sm:h-5 sm:w-5" />}
                 </Button>
 
                 <Dialog>
@@ -103,9 +104,9 @@ export function Header() {
                             variant="ghost"
                             size="icon"
                             title="Logout"
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 sm:h-9 sm:w-9"
                         >
-                            <LogOut className="h-5 w-5" />
+                            <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
                         </Button>
                     </DialogTrigger>
                     <DialogContent>

@@ -274,15 +274,8 @@ const Chart = ({ symbol }: ChartProps) => {
             timestamp = timestamp / 1000;
         }
 
-        // FIX: Although the user confirmed the backend sends UTC (via API historical data),
-        // the live tick timestamps result in a double-timezone offset when displayed (e.g., 20:15 instead of 14:45).
-        // This implies the live timestamp value effectively acts like "Local Time interpreted as UTC".
-        // To align live ticks with historical data and correct local time display, we subtract the timezone offset.
-        // ex: IST is UTC+5:30. getTimezoneOffset() is -330 minutes.
-        // Timestamp (Local-as-UTC) + Offset (negative) = True UTC.
-        // Display: True UTC + Local Offset = Real Local Time.
-        const offsetSeconds = new Date().getTimezoneOffset() * 60;
-        timestamp = timestamp + offsetSeconds;
+        // No manual timezone offset needed. We assume backend sends standard Unix timestamps (UTC).
+        // The chart library handles local time conversion for display.
 
         const { candle, volumeData, isNew } = updateLiveCandle(
             lastCandleRef.current,
@@ -316,23 +309,23 @@ const Chart = ({ symbol }: ChartProps) => {
 
     return (
         <div className="w-full space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div className="flex items-center gap-2">
-                    <span className="text-lg font-medium text-foreground">{symbol} Chart</span>
-                    {isLoading && <span className="text-xs text-muted-foreground animate-pulse">Loading...</span>}
+                    <span className="text-sm sm:text-lg font-medium text-foreground">{symbol} Chart</span>
+                    {isLoading && <span className="text-[10px] sm:text-xs text-muted-foreground animate-pulse">Loading...</span>}
                 </div>
 
                 <Tabs
                     value={String(timeframe)}
                     onValueChange={handleTimeframeChange}
-                    className="w-auto"
+                    className="w-full sm:w-auto"
                 >
-                    <TabsList className="grid w-full grid-cols-6 h-8">
+                    <TabsList className="grid w-full sm:w-auto grid-cols-6 h-7 sm:h-8">
                         {Object.entries(TIMEFRAMES).map(([key, value]) => (
                             <TabsTrigger
                                 key={key}
                                 value={String(value)}
-                                className="text-xs px-2 h-6"
+                                className="text-[10px] sm:text-xs px-1 sm:px-2 h-5 sm:h-6"
                             >
                                 {key === 'FIVE_MINUTES' ? '5m' :
                                     key === 'FIFTEEN_MINUTES' ? '15m' :
@@ -345,19 +338,19 @@ const Chart = ({ symbol }: ChartProps) => {
                 </Tabs>
             </div>
 
-            <div className="relative h-[500px] w-full border rounded-md overflow-hidden bg-background shadow-sm">
+            <div className="relative h-[300px] sm:h-[400px] lg:h-[500px] w-full border rounded-md overflow-hidden bg-background shadow-sm">
                 <div ref={chartContainerRef} className="absolute inset-0" />
             </div>
 
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                <Badge variant="outline" className="gap-1 font-normal">
-                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-[10px] sm:text-xs text-muted-foreground">
+                <Badge variant="outline" className="gap-1 font-normal text-[10px] sm:text-xs">
+                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500 animate-pulse"></span>
                     Live
                 </Badge>
                 <div>
                     Candles: <span className="font-medium text-foreground">{candleCount}</span>
                 </div>
-                <div>
+                <div className="hidden sm:block">
                     Last Update: <span className="font-medium text-foreground">{lastUpdateTime}</span>
                 </div>
             </div>

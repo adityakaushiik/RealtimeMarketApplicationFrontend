@@ -33,6 +33,11 @@ import { ExchangeHolidayCreateComponent } from "@/crud_utils/exchange_holiday/Ex
 import { ExchangeHolidayUpdateComponent } from "@/crud_utils/exchange_holiday/ExchangeHolidayUpdate";
 import { ExchangeHolidayDeleteComponent } from "@/crud_utils/exchange_holiday/ExchangeHolidayDelete";
 
+// Exchange Components
+import { ExchangeCreateComponent } from "@/crud_utils/exchange/ExchangeCreate";
+import { ExchangeUpdateComponent } from "@/crud_utils/exchange/ExchangeUpdate";
+import { ExchangeDeleteComponent } from "@/crud_utils/exchange/ExchangeDelete";
+
 // Watchlist Components
 import { WatchlistPage } from "@/pages/WatchlistPage";
 import { WatchlistDetailPage } from "@/pages/WatchlistDetailPage";
@@ -149,6 +154,31 @@ export const router = createBrowserRouter([
                         element: (
                             <ConfigLayout title="Delete Exchange Holiday" description="Remove an exchange holiday.">
                                 <ExchangeHolidayDeleteComponent />
+                            </ConfigLayout>
+                        ),
+                    },
+                    // Exchanges
+                    {
+                        path: "/config/exchanges/create",
+                        element: (
+                            <ConfigLayout title="Create Exchange" description="Add a new stock exchange.">
+                                <ExchangeCreateComponent />
+                            </ConfigLayout>
+                        ),
+                    },
+                    {
+                        path: "/config/exchanges/update",
+                        element: (
+                            <ConfigLayout title="Update Exchange" description="Modify an existing exchange configuration.">
+                                <ExchangeUpdateComponent />
+                            </ConfigLayout>
+                        ),
+                    },
+                    {
+                        path: "/config/exchanges/delete",
+                        element: (
+                            <ConfigLayout title="Delete Exchange" description="Remove a stock exchange.">
+                                <ExchangeDeleteComponent />
                             </ConfigLayout>
                         ),
                     },
