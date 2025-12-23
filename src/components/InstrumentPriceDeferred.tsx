@@ -207,15 +207,17 @@ const InstrumentPriceDeferred = ({
             ref={containerRef}
             className={`inline-flex items-center gap-2 ${className}`}
         >
-            {/* Price Display */}
-            <span className={`font-mono font-semibold transition-colors duration-200 ${priceChangeColor}`}>
-                {formattedPrice}
-            </span>
-            {formattedChange && (
-                <span className={`text-xs ${changeColor}`}>
-                    {formattedChange}
+            <div className="flex flex-col items-end gap-0.5 leading-[16px]">
+                {/* Price Display */}
+                <span className={`font-mono font-semibold transition-colors duration-200 ${priceChangeColor}`}>
+                    {formattedPrice}
                 </span>
-            )}
+                {formattedChange && (
+                    <span className={`text-xs ${changeColor}`}>
+                        {formattedChange}
+                    </span>
+                )}
+            </div>
 
             {/* Optional: Visibility indicator (for debugging) */}
             {import.meta.env.MODE === 'development' && (

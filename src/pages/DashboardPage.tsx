@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ApiService } from "@/shared/services/apiService";
-import type { InstrumentInDb, PriceHistoryDailyInDb, ExchangeInDb } from "@/shared/types/apiTypes";
+import type { InstrumentInDb, ExchangeInDb, InstrumentTypeInDb, SectorInDb } from "@/shared/types/apiTypes";
 import { useAppStore } from "@/shared/store/appStore";
 import InstrumentPriceDeferred from "@/components/InstrumentPriceDeferred";
 import { MarketStatusIndicator } from "@/components/MarketStatusIndicator";
@@ -11,6 +11,8 @@ import { ArrowRight } from "lucide-react";
 export const DashboardPage = () => {
     const [instruments, setInstruments] = useState<InstrumentInDb[]>([]);
     const [currentExchange, setCurrentExchange] = useState<ExchangeInDb | null>(null);
+    const [instrumentTypes, setInstrumentTypes] = useState<InstrumentTypeInDb[]>([]);
+    const [sectors, setSectors] = useState<SectorInDb[]>([]);
     const { selectedExchange, setPreviousCloseMap } = useAppStore();
     const navigate = useNavigate();
     const [, setTick] = useState(0); // For forcing re-render to update market status
@@ -54,24 +56,42 @@ export const DashboardPage = () => {
         };
         fetchExchange();
 
+        const fetchTypesAndSectors = async () => {
+            try {
+                const [types, sectorsData] = await Promise.all([
+                    ApiService.getInstrumentTypes(),
+                    ApiService.getSectorList()
+                ]);
+                setInstrumentTypes(types);
+                setSectors(sectorsData);
+            } catch (error) {
+                console.error("Failed to fetch types and sectors:", error);
+            }
+        };
+        fetchTypesAndSectors();
+
         const fetchPreviousClose = async () => {
             if (!selectedExchange) return;
             try {
                 const data: {
-                    exchange: string;
+                    exchange_code: string;
                     data: {
-                        instrument: InstrumentInDb;
-                        price_history: PriceHistoryDailyInDb;
+                        symbol: string;
+                        price: number;
+                        timestamp: string;
                     }[]
                 } = await ApiService.getPreviousCloseForExchange(selectedExchange);
 
+                console.log("Previous close data received:", data);
+
                 const previousCloseData = data.data.reduce((acc, item) => {
-                    if (item.price_history.close != null) {
-                        acc[item.instrument.symbol] = item.price_history.close;
+                    if (item.price != null) {
+                        acc[item.symbol] = item.price;
                     }
                     return acc;
                 }, {} as Record<string, number>);
 
+                console.log("Previous close map:", previousCloseData);
                 setPreviousCloseMap(previousCloseData);
             } catch (error) {
                 console.error("Failed to fetch previous close:", error);
@@ -80,6 +100,16 @@ export const DashboardPage = () => {
         fetchPreviousClose();
 
     }, [selectedExchange, setPreviousCloseMap]);
+
+    const typeMap = instrumentTypes.reduce((acc, type) => {
+        acc[type.id] = type.name;
+        return acc;
+    }, {} as Record<number, string>);
+
+    const sectorMap = sectors.reduce((acc, sector) => {
+        acc[sector.id] = sector.name;
+        return acc;
+    }, {} as Record<number, string>);
 
     return (
         <div className="page-container flex flex-col section-gap">
@@ -124,8 +154,13 @@ export const DashboardPage = () => {
 
                             <div className="flex items-center gap-3 sm:gap-6 md:gap-10 shrink-0">
                                 <div className="hidden md:flex flex-col items-end min-w-[80px]">
+                                    <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Sector</span>
+                                    <span className="text-sm font-medium">{instrument.sector_id ? sectorMap[instrument.sector_id] || instrument.sector_id : 'N/A'}</span>
+                                </div>
+
+                                <div className="hidden md:flex flex-col items-end min-w-[80px]">
                                     <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Type</span>
-                                    <span className="text-sm font-medium">{instrument.instrument_type_id}</span>
+                                    <span className="text-sm font-medium">{typeMap[instrument.instrument_type_id] || instrument.instrument_type_id}</span>
                                 </div>
 
                                 <div className="flex flex-col items-end min-w-[70px] sm:min-w-[100px]">

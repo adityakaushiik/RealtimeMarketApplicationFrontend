@@ -11,6 +11,8 @@ import { WebSocketMessageType } from '../shared/utils/CommonConstants';
 import { ApiService } from '../shared/services/apiService';
 import { WebSocketService } from '../shared/services/websocketService';
 import { parseApiData, aggregateCandles, updateLiveCandle } from '../shared/utils/chartUtils';
+import { Loader2 } from "lucide-react";
+import { useTheme } from './theme-provider';
 
 /**
  * Timeframe constants for chart intervals (in minutes)
@@ -62,10 +64,20 @@ interface ChartProps {
 
 const Chart = ({ symbol }: ChartProps) => {
     // --- State ---
+    const { theme } = useTheme();
     const [timeframe, setTimeframe] = useState<Timeframe>(TIMEFRAMES.ONE_DAY);
     const [isLoading, setIsLoading] = useState(false);
     const [candleCount, setCandleCount] = useState(0);
     const [lastUpdateTime, setLastUpdateTime] = useState<string>('--:--:--');
+
+    const isDark = useMemo(() => {
+        if (theme === 'dark') return true;
+        if (theme === 'light') return false;
+        if (typeof window !== 'undefined') {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches;
+        }
+        return false;
+    }, [theme]);
 
     // --- Refs ---
     const intradayCacheRef = useRef<{ symbol: string; data: any[] } | null>(null);
@@ -181,6 +193,24 @@ const Chart = ({ symbol }: ChartProps) => {
             chart.remove();
         };
     }, []);
+
+    // --- Theme Updates ---
+    useEffect(() => {
+        if (!chartRef.current) return;
+
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : '#f0f3fa';
+        const textColor = isDark ? '#9ca3af' : '#333';
+
+        chartRef.current.applyOptions({
+            layout: {
+                textColor,
+            },
+            grid: {
+                vertLines: { color: gridColor },
+                horzLines: { color: gridColor },
+            },
+        });
+    }, [isDark]);
 
     // --- Historical Data Fetching ---
     useEffect(() => {
@@ -340,6 +370,11 @@ const Chart = ({ symbol }: ChartProps) => {
 
             <div className="relative h-[300px] sm:h-[400px] lg:h-[500px] w-full border rounded-md overflow-hidden bg-background shadow-sm">
                 <div ref={chartContainerRef} className="absolute inset-0" />
+                {isLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10 backdrop-blur-[1px]">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                )}
             </div>
 
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-[10px] sm:text-xs text-muted-foreground">

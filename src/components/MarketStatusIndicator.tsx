@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import type { ExchangeInDb } from '@/shared/types/apiTypes';
 
@@ -164,9 +164,21 @@ const statusConfig: Record<MarketStatus, { label: string; variant: 'default' | '
 };
 
 export function MarketStatusIndicator({ exchange, className = '', showDetails = true }: MarketStatusIndicatorProps) {
+    // Internal timer to force recalculation every minute
+    const [tick, setTick] = useState(0);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTick(t => t + 1);
+        }, 60000); // Update every minute
+        return () => clearInterval(interval);
+    }, []);
+
     const { status, nextEvent } = useMemo(() => {
+        // tick is used to force recalculation every minute
+        void tick;
         return getMarketStatus(exchange);
-    }, [exchange]);
+    }, [exchange, tick]);
 
     const config = statusConfig[status];
 
