@@ -79,6 +79,11 @@ const Chart = ({ symbol }: ChartProps) => {
         return false;
     }, [theme]);
 
+    const isDarkRef = useRef(isDark);
+    useEffect(() => {
+        isDarkRef.current = isDark;
+    }, [isDark]);
+
     // --- Refs ---
     const intradayCacheRef = useRef<{ symbol: string; data: any[] } | null>(null);
     const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -89,6 +94,66 @@ const Chart = ({ symbol }: ChartProps) => {
     // Track the last candle and volume to properly merge live updates
     const lastCandleRef = useRef<CandlestickData | null>(null);
     const lastVolumeRef = useRef<HistogramData | null>(null);
+
+    // --- Legend & Hover State ---
+    const isHovering = useRef(false);
+    const legendRef = useRef<HTMLDivElement>(null);
+
+    const formatVolume = (vol: number) => {
+        if (!vol) return '0';
+        if (vol >= 1000000000) return (vol / 1000000000).toFixed(2) + 'B';
+        if (vol >= 1000000) return (vol / 1000000).toFixed(2) + 'M';
+        if (vol >= 1000) return (vol / 1000).toFixed(2) + 'K';
+        return vol.toString();
+    };
+
+    const updateLegendDOM = (candle: CandlestickData | undefined, volume: number | undefined) => {
+        if (!legendRef.current) return;
+
+        if (!candle) {
+            legendRef.current.innerHTML = '';
+            return;
+        }
+
+        const open = candle.open;
+        const high = candle.high;
+        const low = candle.low;
+        const close = candle.close;
+        const val = volume;
+
+        const isUp = close >= open;
+        const currentIsDark = isDarkRef.current; // Use Ref for fresh value
+
+        const labelColor = currentIsDark ? '#9ca3af' : '#6b7280';
+        const valueColor = currentIsDark ? '#e5e7eb' : '#111827';
+        const valueColorDynamic = isUp ? '#26a69a' : '#ef5350';
+
+        legendRef.current.innerHTML = `
+            <div class="flex flex-wrap gap-3 text-xs sm:text-sm font-medium z-50 pointer-events-none select-none">
+               <div class="flex items-center gap-1">
+                    <span style="color: ${labelColor}">O</span>
+                    <span style="color: ${valueColorDynamic}">${open.toFixed(2)}</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span style="color: ${labelColor}">H</span>
+                    <span style="color: ${valueColorDynamic}">${high.toFixed(2)}</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span style="color: ${labelColor}">L</span>
+                    <span style="color: ${valueColorDynamic}">${low.toFixed(2)}</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span style="color: ${labelColor}">C</span>
+                    <span style="color: ${valueColorDynamic}">${close.toFixed(2)}</span>
+                </div>
+                ${val !== undefined ? `
+                <div class="flex items-center gap-1">
+                    <span style="color: ${labelColor}">Vol</span>
+                    <span style="color: ${valueColor}">${formatVolume(val)}</span>
+                </div>` : ''}
+            </div>
+        `;
+    };
 
     // --- Data Store Subscription ---
     // Subscribe to the specific symbol's data for live updates
@@ -152,6 +217,9 @@ const Chart = ({ symbol }: ChartProps) => {
                     }
                 }
             },
+            crosshair: {
+                mode: 1 // CrosshairMode.Magnet
+            }
         });
 
         const candleSeries = chart.addSeries(CandlestickSeries, {
@@ -179,6 +247,37 @@ const Chart = ({ symbol }: ChartProps) => {
         chartRef.current = chart;
         seriesRef.current = candleSeries;
         volumeSeriesRef.current = volumeSeries;
+
+        // Subscribe to crosshair move
+        chart.subscribeCrosshairMove(param => {
+            if (
+                param.point === undefined ||
+                !param.time ||
+                param.point.x < 0 ||
+                param.point.x > chartContainerRef.current!.clientWidth ||
+                param.point.y < 0 ||
+                param.point.y > chartContainerRef.current!.clientHeight
+            ) {
+                // Mouse leave or invalid point
+                isHovering.current = false;
+                if (lastCandleRef.current) {
+                    const lastVol = lastVolumeRef.current ? lastVolumeRef.current.value : undefined;
+                    updateLegendDOM(lastCandleRef.current, lastVol);
+                } else {
+                    updateLegendDOM(undefined, undefined);
+                }
+            } else {
+                // Mouse hover
+                isHovering.current = true;
+                const candleData = param.seriesData.get(candleSeries) as CandlestickData | undefined;
+                const volumeData = param.seriesData.get(volumeSeries) as HistogramData | undefined;
+                const vol = volumeData ? volumeData.value : undefined;
+
+                if (candleData) {
+                    updateLegendDOM(candleData, vol);
+                }
+            }
+        });
 
         // Resize observer
         const resizeObserver = new ResizeObserver(entries => {
@@ -253,6 +352,13 @@ const Chart = ({ symbol }: ChartProps) => {
                 lastVolumeRef.current = volumes.length > 0 ? volumes[volumes.length - 1] : null;
                 setCandleCount(candles.length);
 
+                // Initial Legend Update (Historical)
+                if (lastCandleRef.current && !isHovering.current) {
+                    const lastVol = lastVolumeRef.current ? lastVolumeRef.current.value : undefined;
+                    updateLegendDOM(lastCandleRef.current, lastVol);
+                }
+
+
                 // Fit content
                 if (chartRef.current) {
                     chartRef.current.timeScale().fitContent();
@@ -324,7 +430,13 @@ const Chart = ({ symbol }: ChartProps) => {
         lastCandleRef.current = candle;
         lastVolumeRef.current = volumeData;
 
+        // Update Legend if not hovering
+        if (!isHovering.current) {
+            updateLegendDOM(candle, volumeData ? volumeData.value : undefined);
+        }
+
         if (isNew) {
+
             setCandleCount(prev => prev + 1);
         }
 
@@ -369,6 +481,7 @@ const Chart = ({ symbol }: ChartProps) => {
             </div>
 
             <div className="relative h-[300px] sm:h-[400px] lg:h-[500px] w-full border rounded-md overflow-hidden bg-background shadow-sm">
+                <div ref={legendRef} className="absolute top-2 left-2 z-20 pointer-events-none" />
                 <div ref={chartContainerRef} className="absolute inset-0" />
                 {isLoading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10 backdrop-blur-[1px]">
