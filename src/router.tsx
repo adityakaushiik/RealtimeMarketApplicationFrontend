@@ -42,13 +42,15 @@ import { ExchangeDeleteComponent } from "@/crud_utils/exchange/ExchangeDelete";
 import { WatchlistPage } from "@/pages/WatchlistPage";
 import { WatchlistDetailPage } from "@/pages/WatchlistDetailPage";
 
+const WS_URL = 'ws://15.206.147.192:8000/ws';
+
 // Layout component that includes the Header and Sidebar
 const Layout = () => {
     const { connect, isConnected } = useWebSocketStore();
 
     useEffect(() => {
         if (!isConnected) {
-            connect('ws://localhost:8000/ws', true);
+            connect(WS_URL, true);
         }
     }, [connect, isConnected]);
 
