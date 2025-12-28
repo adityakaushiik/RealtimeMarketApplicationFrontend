@@ -12,30 +12,41 @@ import {
 import { Input } from "@/components/ui/input";
 import { ApiService } from "@/shared/services/apiService";
 
-export function LoginForm({
+export function RegisterForm({
     className,
     ...props
 }: React.ComponentProps<"form">) {
     const navigate = useNavigate();
+    const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
+
+        if (password !== confirmPassword) {
+            setError("Passwords do not match");
+            return;
+        }
+
         setLoading(true);
 
         try {
-            await ApiService.login({
-                username_or_email: email,
+            await ApiService.register({
+                username: name,
+                email: email,
                 password: password,
             });
-            // Redirect to dashboard on successful login
-            navigate("/dashboard");
+            // Redirect to login on successful registration or dashboard if auto-login
+            // For now, let's redirect to login with a success message? Or just login directly if API returns token (register usually doesn't return token in this app based on type analysis, check ApiService details)
+            // ApiService.register returns UserInDb, not LoginResponse. So we probably need to login or redirect to login.
+            navigate("/login");
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Login failed");
+            setError(err instanceof Error ? err.message : "Registration failed");
         } finally {
             setLoading(false);
         }
@@ -45,9 +56,9 @@ export function LoginForm({
         <form className={cn("flex flex-col gap-6", className)} onSubmit={handleSubmit} {...props}>
             <FieldGroup>
                 <div className="flex flex-col items-center gap-1 text-center">
-                    <h1 className="text-2xl font-bold">Login to your account</h1>
+                    <h1 className="text-2xl font-bold">Create an account</h1>
                     <p className="text-muted-foreground text-sm text-balance">
-                        Enter your email below to login to your account
+                        Enter your details below to create your account
                     </p>
                 </div>
 
@@ -56,6 +67,19 @@ export function LoginForm({
                         {error}
                     </div>
                 )}
+
+                <Field>
+                    <FieldLabel htmlFor="name">Name</FieldLabel>
+                    <Input
+                        id="name"
+                        type="text"
+                        placeholder="John Doe"
+                        required
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        disabled={loading}
+                    />
+                </Field>
 
                 <Field>
                     <FieldLabel htmlFor="email">Email</FieldLabel>
@@ -69,16 +93,9 @@ export function LoginForm({
                         disabled={loading}
                     />
                 </Field>
+
                 <Field>
-                    <div className="flex items-center">
-                        <FieldLabel htmlFor="password">Password</FieldLabel>
-                        <a
-                            href="#"
-                            className="ml-auto text-sm underline-offset-4 hover:underline"
-                        >
-                            Forgot your password?
-                        </a>
-                    </div>
+                    <FieldLabel htmlFor="password">Password</FieldLabel>
                     <Input
                         id="password"
                         type="password"
@@ -88,9 +105,22 @@ export function LoginForm({
                         disabled={loading}
                     />
                 </Field>
+
+                <Field>
+                    <FieldLabel htmlFor="confirmPassword">Confirm Password</FieldLabel>
+                    <Input
+                        id="confirmPassword"
+                        type="password"
+                        required
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        disabled={loading}
+                    />
+                </Field>
+
                 <Field>
                     <Button type="submit" disabled={loading}>
-                        {loading ? "Logging in..." : "Login"}
+                        {loading ? "Creating account..." : "Sign Up"}
                     </Button>
                 </Field>
                 <FieldSeparator>Or continue with</FieldSeparator>
@@ -102,12 +132,12 @@ export function LoginForm({
                                 fill="currentColor"
                             />
                         </svg>
-                        Login with Google
+                        Sign up with Google
                     </Button>
                     <FieldDescription className="text-center">
-                        Don&apos;t have an account?{" "}
-                        <a href="/register" className="underline underline-offset-4">
-                            Sign up
+                        Already have an account?{" "}
+                        <a href="/login" className="underline underline-offset-4">
+                            Login
                         </a>
                     </FieldDescription>
                 </Field>

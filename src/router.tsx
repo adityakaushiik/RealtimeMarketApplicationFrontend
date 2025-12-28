@@ -5,6 +5,8 @@ import { StockDetailPage } from "./pages/StockDetailPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ConfigPage } from "./pages/ConfigPage";
 import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import { RoleProtectedRoute } from "./components/RoleProtectedRoute";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
@@ -41,8 +43,9 @@ import { ExchangeDeleteComponent } from "@/crud_utils/exchange/ExchangeDelete";
 // Watchlist Components
 import { WatchlistPage } from "@/pages/WatchlistPage";
 import { WatchlistDetailPage } from "@/pages/WatchlistDetailPage";
+import { UserRoles } from "./shared/utils/CommonConstants";
 
-const WS_URL = 'ws://15.206.147.192:8000/ws';
+const WS_URL = import.meta.env.VITE_WS_URL;
 
 // Layout component that includes the Header and Sidebar
 const Layout = () => {
@@ -73,6 +76,10 @@ export const router = createBrowserRouter([
         element: <LoginPage />,
     },
     {
+        path: "/register",
+        element: <RegisterPage />,
+    },
+    {
         path: "/",
         element: <ProtectedRoute />,
         children: [
@@ -96,10 +103,10 @@ export const router = createBrowserRouter([
                         path: "/stocks/:symbol",
                         element: <StockDetailPage />,
                     },
-                    {
-                        path: "/config",
-                        element: <ConfigPage />, // Optional: keep as landing or remove
-                    },
+                    // {
+                    //     path: "/config",
+                    //     element: <ConfigPage />, // Optional: keep as landing or remove
+                    // },
                     // Watchlist routes
                     {
                         path: "/watchlist",
@@ -109,155 +116,165 @@ export const router = createBrowserRouter([
                         path: "/watchlist/:id",
                         element: <WatchlistDetailPage />,
                     },
-                    // Instruments
                     {
-                        path: "/config/instruments/create",
-                        element: (
-                            <ConfigLayout title="Create Instrument" description="Add a new trading instrument to the system.">
-                                <InstrumentCreateComponent />
-                            </ConfigLayout>
-                        ),
-                    },
-                    {
-                        path: "/config/instruments/update",
-                        element: (
-                            <ConfigLayout title="Update Instrument" description="Modify an existing trading instrument.">
-                                <InstrumentUpdateComponent />
-                            </ConfigLayout>
-                        ),
-                    },
-                    {
-                        path: "/config/instruments/delete",
-                        element: (
-                            <ConfigLayout title="Delete Instrument" description="Remove a trading instrument from the system.">
-                                <InstrumentDeleteComponent />
-                            </ConfigLayout>
-                        ),
-                    },
-                    // Exchange Holidays
-                    {
-                        path: "/config/exchange-holidays/create",
-                        element: (
-                            <ConfigLayout title="Create Exchange Holiday" description="Add a new holiday for an exchange.">
-                                <ExchangeHolidayCreateComponent />
-                            </ConfigLayout>
-                        ),
-                    },
-                    {
-                        path: "/config/exchange-holidays/update",
-                        element: (
-                            <ConfigLayout title="Update Exchange Holiday" description="Modify an existing exchange holiday.">
-                                <ExchangeHolidayUpdateComponent />
-                            </ConfigLayout>
-                        ),
-                    },
-                    {
-                        path: "/config/exchange-holidays/delete",
-                        element: (
-                            <ConfigLayout title="Delete Exchange Holiday" description="Remove an exchange holiday.">
-                                <ExchangeHolidayDeleteComponent />
-                            </ConfigLayout>
-                        ),
-                    },
-                    // Exchanges
-                    {
-                        path: "/config/exchanges/create",
-                        element: (
-                            <ConfigLayout title="Create Exchange" description="Add a new stock exchange.">
-                                <ExchangeCreateComponent />
-                            </ConfigLayout>
-                        ),
-                    },
-                    {
-                        path: "/config/exchanges/update",
-                        element: (
-                            <ConfigLayout title="Update Exchange" description="Modify an existing exchange configuration.">
-                                <ExchangeUpdateComponent />
-                            </ConfigLayout>
-                        ),
-                    },
-                    {
-                        path: "/config/exchanges/delete",
-                        element: (
-                            <ConfigLayout title="Delete Exchange" description="Remove a stock exchange.">
-                                <ExchangeDeleteComponent />
-                            </ConfigLayout>
-                        ),
-                    },
-                    // Providers
-                    {
-                        path: "/config/providers/create",
-                        element: (
-                            <ConfigLayout title="Create Provider" description="Add a new market data provider.">
-                                <ProviderCreateComponent />
-                            </ConfigLayout>
-                        ),
-                    },
-                    {
-                        path: "/config/providers/update",
-                        element: (
-                            <ConfigLayout title="Update Provider" description="Modify an existing provider configuration.">
-                                <ProviderUpdateComponent />
-                            </ConfigLayout>
-                        ),
-                    },
-                    {
-                        path: "/config/providers/delete",
-                        element: (
-                            <ConfigLayout title="Delete Provider" description="Remove a provider configuration.">
-                                <ProviderDeleteComponent />
-                            </ConfigLayout>
-                        ),
-                    },
-                    // Sectors
-                    {
-                        path: "/config/sectors/create",
-                        element: (
-                            <ConfigLayout title="Create Sector" description="Define a new market sector.">
-                                <SectorCreateComponent />
-                            </ConfigLayout>
-                        ),
-                    },
-                    {
-                        path: "/config/sectors/update",
-                        element: (
-                            <ConfigLayout title="Update Sector" description="Modify an existing market sector.">
-                                <SectorUpdateComponent />
-                            </ConfigLayout>
-                        ),
-                    },
-                    {
-                        path: "/config/sectors/delete",
-                        element: (
-                            <ConfigLayout title="Delete Sector" description="Remove a market sector.">
-                                <SectorDeleteComponent />
-                            </ConfigLayout>
-                        ),
-                    },
-                    // Instrument Types
-                    {
-                        path: "/config/instrument-types/create",
-                        element: (
-                            <ConfigLayout title="Create Instrument Type" description="Define a new type of instrument.">
-                                <InstrumentTypeCreateComponent />
-                            </ConfigLayout>
-                        ),
-                    },
-                    {
-                        path: "/config/instrument-types/update",
-                        element: (
-                            <ConfigLayout title="Update Instrument Type" description="Modify an existing instrument type.">
-                                <InstrumentTypeUpdateComponent />
-                            </ConfigLayout>
-                        ),
-                    },
-                    {
-                        path: "/config/instrument-types/delete",
-                        element: (
-                            <ConfigLayout title="Delete Instrument Type" description="Remove an instrument type.">
-                                <InstrumentTypeDeleteComponent />
-                            </ConfigLayout>
-                        ),
+                        element: <RoleProtectedRoute allowedRoles={[UserRoles.ADMIN]} />,
+                        children: [
+                            {
+                                path: "/config",
+                                element: <ConfigPage />,
+                            },
+
+                            // Instruments
+                            {
+                                path: "/config/instruments/create",
+                                element: (
+                                    <ConfigLayout title="Create Instrument" description="Add a new trading instrument to the system.">
+                                        <InstrumentCreateComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            {
+                                path: "/config/instruments/update",
+                                element: (
+                                    <ConfigLayout title="Update Instrument" description="Modify an existing trading instrument.">
+                                        <InstrumentUpdateComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            {
+                                path: "/config/instruments/delete",
+                                element: (
+                                    <ConfigLayout title="Delete Instrument" description="Remove a trading instrument from the system.">
+                                        <InstrumentDeleteComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            // Exchange Holidays
+                            {
+                                path: "/config/exchange-holidays/create",
+                                element: (
+                                    <ConfigLayout title="Create Exchange Holiday" description="Add a new holiday for an exchange.">
+                                        <ExchangeHolidayCreateComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            {
+                                path: "/config/exchange-holidays/update",
+                                element: (
+                                    <ConfigLayout title="Update Exchange Holiday" description="Modify an existing exchange holiday.">
+                                        <ExchangeHolidayUpdateComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            {
+                                path: "/config/exchange-holidays/delete",
+                                element: (
+                                    <ConfigLayout title="Delete Exchange Holiday" description="Remove an exchange holiday.">
+                                        <ExchangeHolidayDeleteComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            // Exchanges
+                            {
+                                path: "/config/exchanges/create",
+                                element: (
+                                    <ConfigLayout title="Create Exchange" description="Add a new stock exchange.">
+                                        <ExchangeCreateComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            {
+                                path: "/config/exchanges/update",
+                                element: (
+                                    <ConfigLayout title="Update Exchange" description="Modify an existing exchange configuration.">
+                                        <ExchangeUpdateComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            {
+                                path: "/config/exchanges/delete",
+                                element: (
+                                    <ConfigLayout title="Delete Exchange" description="Remove a stock exchange.">
+                                        <ExchangeDeleteComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            // Providers
+                            {
+                                path: "/config/providers/create",
+                                element: (
+                                    <ConfigLayout title="Create Provider" description="Add a new market data provider.">
+                                        <ProviderCreateComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            {
+                                path: "/config/providers/update",
+                                element: (
+                                    <ConfigLayout title="Update Provider" description="Modify an existing provider configuration.">
+                                        <ProviderUpdateComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            {
+                                path: "/config/providers/delete",
+                                element: (
+                                    <ConfigLayout title="Delete Provider" description="Remove a provider configuration.">
+                                        <ProviderDeleteComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            // Sectors
+                            {
+                                path: "/config/sectors/create",
+                                element: (
+                                    <ConfigLayout title="Create Sector" description="Define a new market sector.">
+                                        <SectorCreateComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            {
+                                path: "/config/sectors/update",
+                                element: (
+                                    <ConfigLayout title="Update Sector" description="Modify an existing market sector.">
+                                        <SectorUpdateComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            {
+                                path: "/config/sectors/delete",
+                                element: (
+                                    <ConfigLayout title="Delete Sector" description="Remove a market sector.">
+                                        <SectorDeleteComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            // Instrument Types
+                            {
+                                path: "/config/instrument-types/create",
+                                element: (
+                                    <ConfigLayout title="Create Instrument Type" description="Define a new type of instrument.">
+                                        <InstrumentTypeCreateComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            {
+                                path: "/config/instrument-types/update",
+                                element: (
+                                    <ConfigLayout title="Update Instrument Type" description="Modify an existing instrument type.">
+                                        <InstrumentTypeUpdateComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            {
+                                path: "/config/instrument-types/delete",
+                                element: (
+                                    <ConfigLayout title="Delete Instrument Type" description="Remove an instrument type.">
+                                        <InstrumentTypeDeleteComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                        ]
                     },
                 ],
             },

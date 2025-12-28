@@ -18,3 +18,9 @@ export const ChannelNames = [
     "stocks:SAP.DE",
     "stocks:NESN.SW",
 ];
+
+
+export const UserRoles = {
+    ADMIN: 1,
+    USER: 2
+}

@@ -12,11 +12,8 @@ import type {
     WatchlistItemCreate, WatchlistItemInDb
 } from '../types/apiTypes';
 
-// const BASE_URL = 'http://backend:8000'; // Adjust as needed
-const BASE_URL = 'http://15.206.147.192:8000'; // Adjust as needed
-// const BASE_URL = 'http://localhost:8000'; // Adjust as needed
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// const BASE_URL = 'https://realtimestockmarket.onrender.com'; // Adjust as needed
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';
 
