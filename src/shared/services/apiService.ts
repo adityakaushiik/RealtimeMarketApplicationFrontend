@@ -66,6 +66,14 @@ export class ApiService {
         return data;
     }
 
+    private static invalidateInstrumentListCache() {
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('api_cache_/instrument/list/') || key === 'api_cache_/instrument/') {
+                localStorage.removeItem(key);
+            }
+        });
+    }
+
     // Auth
     static async login(data: LoginRequest): Promise<LoginResponse> {
         const response = await this.request<LoginResponse>('/auth/login', {
@@ -118,10 +126,12 @@ export class ApiService {
     }
 
     static async createInstrument(data: InstrumentCreate): Promise<InstrumentInDb> {
-        return this.request<InstrumentInDb>('/instrument/', {
+        const response = await this.request<InstrumentInDb>('/instrument/', {
             method: 'POST',
             body: JSON.stringify(data),
         });
+        this.invalidateInstrumentListCache();
+        return response;
     }
 
     static async getInstrumentById(id: number): Promise<InstrumentInDb> {
@@ -129,10 +139,12 @@ export class ApiService {
     }
 
     static async updateInstrument(id: number, data: InstrumentUpdate): Promise<InstrumentInDb> {
-        return this.request<InstrumentInDb>(`/instrument/${id}`, {
+        const response = await this.request<InstrumentInDb>(`/instrument/${id}`, {
             method: 'PUT',
             body: JSON.stringify(data),
         });
+        this.invalidateInstrumentListCache();
+        return response;
     }
 
     static async getInstrumentTypes(): Promise<InstrumentTypeInDb[]> {
@@ -164,9 +176,10 @@ export class ApiService {
     }
 
     static async deleteInstrument(id: number): Promise<void> {
-        return this.request<void>(`/instrument/${id}`, {
+        await this.request<void>(`/instrument/${id}`, {
             method: 'DELETE',
         });
+        this.invalidateInstrumentListCache();
     }
 
     static async toggleInstrumentRecording(id: number, shouldRecord: boolean): Promise<InstrumentInDb> {
@@ -294,17 +307,21 @@ export class ApiService {
     }
 
     static async createProviderInstrumentMapping(data: ProviderInstrumentMappingCreate): Promise<ProviderInstrumentMappingInDb> {
-        return this.request<ProviderInstrumentMappingInDb>('/provider/mapping/', {
+        const response = await this.request<ProviderInstrumentMappingInDb>('/provider/mapping/', {
             method: 'POST',
             body: JSON.stringify(data),
         });
+        this.invalidateInstrumentListCache();
+        return response;
     }
 
     static async updateProviderInstrumentMapping(data: ProviderInstrumentMappingCreate): Promise<ProviderInstrumentMappingInDb> {
-        return this.request<ProviderInstrumentMappingInDb>('/provider/mapping/', {
+        const response = await this.request<ProviderInstrumentMappingInDb>('/provider/mapping/', {
             method: 'PUT',
             body: JSON.stringify(data),
         });
+        this.invalidateInstrumentListCache();
+        return response;
     }
 
     static invalidateCache(url: string) {
