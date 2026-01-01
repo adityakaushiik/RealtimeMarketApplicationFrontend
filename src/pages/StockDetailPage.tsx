@@ -65,6 +65,14 @@ export function StockDetailPage() {
                     found = Object.values(instruments).find((i: any) => i.symbol === symbol) as InstrumentInDb;
                 }
 
+                if (!found) {
+                    // Fallback to search if not found in the list (e.g. if inactive/delisted and filtered out by default list API)
+                    const searchResults = await ApiService.searchInstruments(symbol);
+                    if (Array.isArray(searchResults)) {
+                        found = searchResults.find(i => i.symbol === symbol);
+                    }
+                }
+
                 if (found) {
                     setInstrument(found);
                     try {
@@ -250,7 +258,7 @@ export function StockDetailPage() {
                     </CardHeader>
                     <CardContent className="p-3 sm:p-4 pt-0">
                         <div className="text-lg sm:text-2xl font-bold">
-                            {instrument ? (instrument.delisted ? "Delisted" : "Active") : "--"}
+                            {instrument ? (instrument.delisted ? "Delisted" : (!instrument.is_active ? "Inactive" : "Active")) : "--"}
                         </div>
                         <p className="text-[10px] sm:text-xs text-muted-foreground">
                             {instrument ? (instrument.blacklisted ? "Blacklisted" : "Tradable") : ""}

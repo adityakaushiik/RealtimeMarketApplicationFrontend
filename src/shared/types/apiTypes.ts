@@ -40,6 +40,7 @@ export interface InstrumentCreate {
 export interface InstrumentInDb extends InstrumentCreate {
     id: number;
     should_record_data?: boolean;
+    is_active?: boolean;
 }
 
 export interface InstrumentUpdate {
