@@ -6,16 +6,19 @@ import { useAppStore } from "@/shared/store/appStore";
 import InstrumentPriceDeferred from "@/components/InstrumentPriceDeferred";
 import { MarketStatusIndicator } from "@/components/MarketStatusIndicator";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 export const DashboardPage = () => {
     const [instruments, setInstruments] = useState<InstrumentInDb[]>([]);
+    const [marketIndices, setMarketIndices] = useState<InstrumentInDb[]>([]);
     const [currentExchange, setCurrentExchange] = useState<ExchangeInDb | null>(null);
     const [instrumentTypes, setInstrumentTypes] = useState<InstrumentTypeInDb[]>([]);
     const [sectors, setSectors] = useState<SectorInDb[]>([]);
     const { selectedExchange, setPreviousCloseMap } = useAppStore();
     const navigate = useNavigate();
     const [, setTick] = useState(0); // For forcing re-render to update market status
+    const [searchQuery, setSearchQuery] = useState("");
 
     // Update market status every minute
     useEffect(() => {
@@ -29,11 +32,20 @@ export const DashboardPage = () => {
         const fetchInstruments = async () => {
             if (!selectedExchange) return;
             try {
-                const data = await ApiService.getInstruments(selectedExchange);
-                if (Array.isArray(data)) {
-                    setInstruments(data);
-                } else if (typeof data === 'object' && data !== null) {
-                    setInstruments(Object.values(data));
+                // Fetch Equities (Type ID 1)
+                const equitiesData = await ApiService.getInstruments(selectedExchange, 1);
+                if (Array.isArray(equitiesData)) {
+                    setInstruments(equitiesData);
+                } else if (typeof equitiesData === 'object' && equitiesData !== null) {
+                    setInstruments(Object.values(equitiesData));
+                }
+
+                // Fetch Market Indices (Type ID 7)
+                const indicesData = await ApiService.getInstruments(selectedExchange, 2);
+                if (Array.isArray(indicesData)) {
+                    setMarketIndices(indicesData);
+                } else if (typeof indicesData === 'object' && indicesData !== null) {
+                    setMarketIndices(Object.values(indicesData));
                 }
             } catch (error) {
                 console.error("Failed to fetch instruments:", error);
@@ -111,23 +123,60 @@ export const DashboardPage = () => {
         return acc;
     }, {} as Record<number, string>);
 
+    const filteredInstruments = instruments.filter(instrument =>
+        instrument.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        instrument.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     return (
         <div className="page-container flex flex-col section-gap">
-            <div className="page-header-row">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div className="page-header" style={{ marginBottom: 0 }}>
                     <div className="flex items-center gap-3 flex-wrap">
                         <h1 className="page-title">Dashboard</h1>
                         <MarketStatusIndicator exchange={currentExchange} />
                     </div>
-                    <p className="page-subtitle">
+                    <p className="page-subtitle mt-1">
                         {selectedExchange || 'All Exchanges'} &bull; {instruments.length} Active Instruments
                     </p>
                 </div>
+
+                <div className="relative group shrink-0">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60 group-focus-within:text-primary transition-colors duration-300" />
+                    <Input
+                        type="search"
+                        placeholder="Search instruments..."
+                        className="w-full sm:w-[260px] md:w-[320px] pl-10 h-10 bg-muted/30 hover:bg-muted/50 focus:bg-background border-border/40 focus:border-primary/30 rounded-xl transition-all duration-300 focus:shadow-[0_0_20px_rgba(0,0,0,0.05)] placeholder:text-muted-foreground/50 text-sm font-medium"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
             </div>
 
+            {marketIndices.length > 0 && (
+                <div className="mb-2">
+                    <h2 className="text-lg font-semibold mb-3">Market Indices</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {marketIndices.map((index) => (
+                            <div
+                                key={index.id}
+                                onClick={() => navigate(`/stocks/${index.symbol}`)}
+                                className="p-4 bg-card hover:bg-accent/50 border rounded-xl shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+                            >
+                                <div className="flex justify-between items-start mb-2">
+                                    <span className="font-bold text-lg">{index.symbol}</span>
+                                    <InstrumentPriceDeferred symbol={index.symbol} />
+                                </div>
+                                <div className="text-sm text-muted-foreground truncate">{index.name}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             <div className="flex flex-col gap-2 sm:gap-3">
-                {instruments.length > 0 ? (
-                    instruments.map((instrument) => (
+                {filteredInstruments.length > 0 ? (
+                    filteredInstruments.map((instrument) => (
                         <div
                             key={instrument.id}
                             onClick={() => navigate(`/stocks/${instrument.symbol}`)}
@@ -178,8 +227,12 @@ export const DashboardPage = () => {
                     ))
                 ) : (
                     <div className="flex flex-col items-center justify-center py-10 sm:py-16 text-center border-2 border-dashed rounded-xl bg-muted/20">
-                        <div className="text-base sm:text-lg font-semibold text-muted-foreground">No instruments found</div>
-                        <p className="text-xs sm:text-sm text-muted-foreground/80">Try selecting a different exchange or check back later.</p>
+                        <div className="text-base sm:text-lg font-semibold text-muted-foreground">
+                            {instruments.length > 0 ? "No matching instruments found" : "No instruments found"}
+                        </div>
+                        <p className="text-xs sm:text-sm text-muted-foreground/80">
+                            {instruments.length > 0 ? "Try adjusting your search terms." : "Try selecting a different exchange or check back later."}
+                        </p>
                     </div>
                 )}
             </div>

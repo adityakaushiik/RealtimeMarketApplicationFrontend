@@ -35,6 +35,7 @@ export interface InstrumentCreate {
     sector_id?: number | null;
     blacklisted?: boolean;
     delisted?: boolean;
+    should_record_data?: boolean;
 }
 
 export interface InstrumentInDb extends InstrumentCreate {
@@ -89,6 +90,19 @@ export interface UserInDb {
     id: number;
     blacklisted: boolean;
     role_id?: number | null;
+    is_active: boolean; // Deprecated in favor of status
+    status: number; // 0: Pending, 1: Approved, 2: Rejected
+}
+
+export interface UserUpdate {
+    email?: string | null;
+    fname?: string | null;
+    lname?: string | null;
+    username?: string | null;
+    profile_picture_url?: string | null;
+    blacklisted?: boolean | null;
+    role_id?: number | null;
+    status?: number | null;
 }
 
 export interface LoginResponse {
@@ -243,3 +257,67 @@ export interface WatchlistInDb {
     name: string;
     items?: WatchlistItemInDb[];
 }
+
+// Exchange Provider Mapping Types
+export interface ExchangeProviderMappingCreate {
+    provider_id: number;
+    exchange_id: number;
+    is_active?: boolean;
+    is_primary?: boolean;
+}
+
+export interface ExchangeProviderMappingInDb {
+    provider_id: number;
+    exchange_id: number;
+    is_active: boolean;
+    is_primary: boolean;
+}
+
+
+export interface ExchangeProviderMappingUpdate {
+    is_active?: boolean | null;
+    is_primary?: boolean | null;
+}
+
+// Suggestion Types
+export interface SuggestionTypeCreate {
+    name: string;
+    description?: string | null;
+}
+
+export interface SuggestionTypeInDb extends SuggestionTypeCreate {
+    id: number;
+    created_at: string;
+    updated_at: string;
+    is_active: boolean;
+}
+
+export interface SuggestionTypeUpdate {
+    name?: string | null;
+    description?: string | null;
+}
+
+// Suggestions
+export interface SuggestionCreate {
+    suggestion_type_id: number;
+    title: string;
+    description: string;
+}
+
+export interface SuggestionInDb extends SuggestionCreate {
+    id: number;
+    user_id: number;
+    status: string;
+    created_at: string;
+    updated_at: string;
+    is_active: boolean;
+}
+
+export interface SuggestionUpdate {
+    suggestion_type_id?: number | null;
+    title?: string | null;
+    description?: string | null;
+    status?: string | null;
+}
+
+

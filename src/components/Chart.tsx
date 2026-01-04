@@ -60,15 +60,17 @@ const getVolume = (data: MarketData): number => {
 
 interface ChartProps {
     symbol: string;
+    currency?: string;
 }
 
-const Chart = ({ symbol }: ChartProps) => {
+const Chart = ({ symbol, currency }: ChartProps) => {
     // --- State ---
     const { theme } = useTheme();
     const [timeframe, setTimeframe] = useState<Timeframe>(TIMEFRAMES.ONE_DAY);
     const [isLoading, setIsLoading] = useState(false);
     const [candleCount, setCandleCount] = useState(0);
     const [lastUpdateTime, setLastUpdateTime] = useState<string>('--:--:--');
+    const [currentPrice, setCurrentPrice] = useState<number | null>(null);
 
     const isDark = useMemo(() => {
         if (theme === 'dark') return true;
@@ -351,6 +353,9 @@ const Chart = ({ symbol }: ChartProps) => {
                 lastCandleRef.current = candles.length > 0 ? candles[candles.length - 1] : null;
                 lastVolumeRef.current = volumes.length > 0 ? volumes[volumes.length - 1] : null;
                 setCandleCount(candles.length);
+                if (candles.length > 0) {
+                    setCurrentPrice(candles[candles.length - 1].close);
+                }
 
                 // Initial Legend Update (Historical)
                 if (lastCandleRef.current && !isHovering.current) {
@@ -429,6 +434,7 @@ const Chart = ({ symbol }: ChartProps) => {
 
         lastCandleRef.current = candle;
         lastVolumeRef.current = volumeData;
+        setCurrentPrice(candle.close);
 
         // Update Legend if not hovering
         if (!isHovering.current) {
@@ -452,9 +458,14 @@ const Chart = ({ symbol }: ChartProps) => {
     return (
         <div className="w-full space-y-2">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <div className="flex items-center gap-2">
-                    <span className="text-sm sm:text-lg font-medium text-foreground">{symbol} Chart</span>
-                    {isLoading && <span className="text-[10px] sm:text-xs text-muted-foreground animate-pulse">Loading...</span>}
+                <div className="flex flex-col">
+                    <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-bold tracking-tight text-foreground">
+                            {currentPrice ? currentPrice.toFixed(2) : '--'}
+                        </span>
+                        <span className="text-sm font-medium text-muted-foreground">{currency || ''}</span>
+                        {isLoading && <span className="text-[10px] sm:text-xs text-muted-foreground animate-pulse ml-2">Loading...</span>}
+                    </div>
                 </div>
 
                 <Tabs

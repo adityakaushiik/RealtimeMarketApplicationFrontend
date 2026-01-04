@@ -40,6 +40,8 @@ export function StockDetailPage() {
     const [openDialog, setOpenDialog] = useState<'create' | 'update' | 'update_instrument' | 'delete_instrument' | null>(null);
     const [confirmRecordingToggle, setConfirmRecordingToggle] = useState(false);
 
+    const [currency, setCurrency] = useState<string>('');
+
     const user = ApiService.getCurrentUser();
     // Assuming role_id 1 is Admin.
     const isAdmin = user?.role_id === 1;
@@ -54,24 +56,7 @@ export function StockDetailPage() {
         const fetchInstrumentDetails = async () => {
             if (!symbol) return;
             try {
-                // Since we don't have an endpoint to get instrument by symbol directly without exchange,
-                // we'll fetch all and find it. This is not ideal for large datasets but works for now.
-                const instruments = await ApiService.getAllInstruments();
-                let found: InstrumentInDb | undefined;
-
-                if (Array.isArray(instruments)) {
-                    found = instruments.find(i => i.symbol === symbol);
-                } else if (typeof instruments === 'object' && instruments !== null) {
-                    found = Object.values(instruments).find((i: any) => i.symbol === symbol) as InstrumentInDb;
-                }
-
-                if (!found) {
-                    // Fallback to search if not found in the list (e.g. if inactive/delisted and filtered out by default list API)
-                    const searchResults = await ApiService.searchInstruments(symbol);
-                    if (Array.isArray(searchResults)) {
-                        found = searchResults.find(i => i.symbol === symbol);
-                    }
-                }
+                const found = await ApiService.getInstrumentBySymbol(symbol);
 
                 if (found) {
                     setInstrument(found);
@@ -80,6 +65,13 @@ export function StockDetailPage() {
                         setMappings(m);
                     } catch (e) {
                         console.error("Failed to fetch mappings", e);
+                    }
+
+                    try {
+                        const exchange = await ApiService.getExchangeById(found.exchange_id);
+                        setCurrency(exchange.currency || '');
+                    } catch (e) {
+                        console.error("Failed to fetch exchange details", e);
                     }
                 }
             } catch (error) {
@@ -228,7 +220,7 @@ export function StockDetailPage() {
                 </div>
             </div>
 
-            <Chart symbol={symbol} />
+            <Chart symbol={symbol} currency={currency} />
 
             {
                 mappings.length > 0 && (

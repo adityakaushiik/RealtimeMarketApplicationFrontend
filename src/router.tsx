@@ -3,6 +3,8 @@ import { Header } from "./components/Header";
 import { StockSearchPage } from "./pages/StockSearchPage";
 import { StockDetailPage } from "./pages/StockDetailPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { UserApprovalPage } from "./pages/UserApprovalPage";
+import { InactiveAccountPage } from "./pages/InactiveAccountPage";
 import { ConfigPage } from "./pages/ConfigPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -39,6 +41,19 @@ import { ExchangeHolidayDeleteComponent } from "@/crud_utils/exchange_holiday/Ex
 import { ExchangeCreateComponent } from "@/crud_utils/exchange/ExchangeCreate";
 import { ExchangeUpdateComponent } from "@/crud_utils/exchange/ExchangeUpdate";
 import { ExchangeDeleteComponent } from "@/crud_utils/exchange/ExchangeDelete";
+
+// Exchange Provider Mapping Components
+import { ExchangeProviderMappingCreateComponent } from "@/crud_utils/exchange_provider_mapping/ExchangeProviderMappingCreate";
+import { ExchangeProviderMappingUpdateComponent } from "@/crud_utils/exchange_provider_mapping/ExchangeProviderMappingUpdate";
+import { ExchangeProviderMappingDeleteComponent } from "@/crud_utils/exchange_provider_mapping/ExchangeProviderMappingDelete";
+
+// Suggestion Type Components
+import { SuggestionTypeCreateComponent } from "@/crud_utils/suggestion_type/SuggestionTypeCreate";
+import { SuggestionTypeUpdateComponent } from "@/crud_utils/suggestion_type/SuggestionTypeUpdate";
+import { SuggestionTypeDeleteComponent } from "@/crud_utils/suggestion_type/SuggestionTypeDelete";
+
+// User Suggestions
+import { UserSuggestionsPage } from "@/pages/UserSuggestionsPage";
 
 // Watchlist Components
 import { WatchlistPage } from "@/pages/WatchlistPage";
@@ -79,10 +94,15 @@ export const router = createBrowserRouter([
         path: "/register",
         element: <RegisterPage />,
     },
+
     {
         path: "/",
         element: <ProtectedRoute />,
         children: [
+            {
+                path: "/inactive",
+                element: <InactiveAccountPage />
+            },
             {
                 path: "/",
                 element: <Layout />,
@@ -120,8 +140,16 @@ export const router = createBrowserRouter([
                         element: <RoleProtectedRoute allowedRoles={[UserRoles.ADMIN]} />,
                         children: [
                             {
+                                path: "/user-approval",
+                                element: <UserApprovalPage />,
+                            },
+                            {
                                 path: "/config",
                                 element: <ConfigPage />,
+                            },
+                            {
+                                path: "/user-suggestions",
+                                element: <UserSuggestionsPage />,
                             },
 
                             // Instruments
@@ -199,6 +227,31 @@ export const router = createBrowserRouter([
                                     </ConfigLayout>
                                 ),
                             },
+                            // Exchange Provider Mappings
+                            {
+                                path: "/config/exchange-providers/create",
+                                element: (
+                                    <ConfigLayout title="Add Provider to Exchange" description="Map a market data provider to an exchange.">
+                                        <ExchangeProviderMappingCreateComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            {
+                                path: "/config/exchange-providers/update",
+                                element: (
+                                    <ConfigLayout title="Update Exchange Provider" description="Update settings for a provider on an exchange (Active, Primary).">
+                                        <ExchangeProviderMappingUpdateComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            {
+                                path: "/config/exchange-providers/delete",
+                                element: (
+                                    <ConfigLayout title="Remove Provider from Exchange" description="Remove a provider mapping from an exchange.">
+                                        <ExchangeProviderMappingDeleteComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
                             // Providers
                             {
                                 path: "/config/providers/create",
@@ -271,6 +324,31 @@ export const router = createBrowserRouter([
                                 element: (
                                     <ConfigLayout title="Delete Instrument Type" description="Remove an instrument type.">
                                         <InstrumentTypeDeleteComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            // Suggestion Types
+                            {
+                                path: "/config/suggestion-types/create",
+                                element: (
+                                    <ConfigLayout title="Create Suggestion Type" description="Define a new suggestion category.">
+                                        <SuggestionTypeCreateComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            {
+                                path: "/config/suggestion-types/update",
+                                element: (
+                                    <ConfigLayout title="Update Suggestion Type" description="Modify an existing suggestion type.">
+                                        <SuggestionTypeUpdateComponent />
+                                    </ConfigLayout>
+                                ),
+                            },
+                            {
+                                path: "/config/suggestion-types/delete",
+                                element: (
+                                    <ConfigLayout title="Delete Suggestion Type" description="Remove a suggestion type.">
+                                        <SuggestionTypeDeleteComponent />
                                     </ConfigLayout>
                                 ),
                             },

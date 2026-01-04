@@ -64,7 +64,7 @@ export function StockSearchPage() {
                         Market Search
                     </h1>
                     <p className="text-base sm:text-xl text-muted-foreground font-light max-w-lg mx-auto leading-relaxed px-4">
-                        Discover real-time data, analyze trends, and track your favorite instruments.
+                        Search across all exchanges and find the instrument you're looking for.
                     </p>
                 </div>
 

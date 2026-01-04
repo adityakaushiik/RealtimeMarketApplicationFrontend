@@ -26,6 +26,7 @@ import {
     DialogTrigger,
     DialogClose,
 } from "@/components/ui/dialog";
+import { SuggestionSubmitDialog } from "./SuggestionSubmitDialog";
 
 export function Header() {
     const [exchanges, setExchanges] = useState<ExchangeInDb[]>([]);
@@ -97,6 +98,8 @@ export function Header() {
                 >
                     {theme === "dark" ? <Sun className="h-4 w-4 sm:h-5 sm:w-5" /> : <Moon className="h-4 w-4 sm:h-5 sm:w-5" />}
                 </Button>
+
+                <SuggestionSubmitDialog />
 
                 <Dialog>
                     <DialogTrigger asChild>

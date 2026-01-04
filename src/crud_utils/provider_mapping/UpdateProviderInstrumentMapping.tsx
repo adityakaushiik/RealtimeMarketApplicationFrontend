@@ -27,7 +27,7 @@ export function UpdateProviderInstrumentMapping({ instrumentId, onSuccess }: Upd
             try {
                 const [providersData, mappingsData] = await Promise.all([
                     ApiService.getProviders(),
-                    ApiService.getInstrumentProviderMappings(instrumentId)
+                    ApiService.getInstrumentProviderMappings(instrumentId, true)
                 ]);
                 setProviders(providersData);
                 setMappings(mappingsData);

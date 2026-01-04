@@ -24,3 +24,9 @@ export const UserRoles = {
     ADMIN: 1,
     USER: 2
 }
+
+export const UserStatus = {
+    PENDING: 0,
+    ACTIVE: 1,
+    REJECTED: 2
+}

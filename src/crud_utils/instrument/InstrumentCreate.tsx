@@ -15,7 +15,8 @@ export function InstrumentCreateComponent() {
         instrument_type_id: 0,
         sector_id: null,
         blacklisted: false,
-        delisted: false
+        delisted: false,
+        should_record_data: true
     });
     const [exchanges, setExchanges] = useState<ExchangeInDb[]>([]);
     const [sectors, setSectors] = useState<SectorInDb[]>([]);
@@ -80,7 +81,8 @@ export function InstrumentCreateComponent() {
                 instrument_type_id: 0,
                 sector_id: null,
                 blacklisted: false,
-                delisted: false
+                delisted: false,
+                should_record_data: true
             });
         } catch (err: any) {
             setError(err.message || 'Failed to create instrument');
@@ -187,6 +189,17 @@ export function InstrumentCreateComponent() {
                         />
                         <Label htmlFor="create-delisted">Delisted</Label>
                     </div>
+                    <div className="flex items-center space-x-2">
+                        <input
+                            type="checkbox"
+                            id="create-should-record"
+                            name="should_record_data"
+                            checked={formData.should_record_data || false}
+                            onChange={handleChange}
+                            className="h-4 w-4 rounded border-gray-300"
+                        />
+                        <Label htmlFor="create-should-record">Record Data</Label>
+                    </div>
                 </div>
             </div>
 
@@ -195,7 +208,7 @@ export function InstrumentCreateComponent() {
 
             <div className="flex justify-end space-x-2">
                 <Button type="button" variant="outline" onClick={() => setFormData({
-                    symbol: '', name: '', exchange_id: 0, instrument_type_id: 0, sector_id: null, blacklisted: false, delisted: false
+                    symbol: '', name: '', exchange_id: 0, instrument_type_id: 0, sector_id: null, blacklisted: false, delisted: false, should_record_data: true
                 })}>
                     Clear
                 </Button>

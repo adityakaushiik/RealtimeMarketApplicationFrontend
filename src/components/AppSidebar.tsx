@@ -202,9 +202,11 @@ export function AppSidebar() {
                     </SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu className="gap-1 px-2 group-data-[collapsible=icon]:px-0">
-                            {sidebarConfig.map((item) => (
-                                <MainMenuItem key={item.title} item={item} />
-                            ))}
+                            {sidebarConfig
+                                .filter(item => !item.roles || (currentUser && currentUser.role_id && item.roles.includes(currentUser.role_id)))
+                                .map((item) => (
+                                    <MainMenuItem key={item.title} item={item} />
+                                ))}
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>

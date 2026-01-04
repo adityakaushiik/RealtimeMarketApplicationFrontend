@@ -1,5 +1,5 @@
 import type {
-    LoginRequest, LoginResponse, UserWithPassword, UserInDb,
+    LoginRequest, LoginResponse, UserWithPassword, UserInDb, UserUpdate,
     InstrumentInDb, InstrumentCreate, InstrumentUpdate,
     ExchangeInDb, ExchangeCreate, ExchangeUpdate,
     ProviderInDb, ProviderCreate,
@@ -9,8 +9,16 @@ import type {
     ProviderInstrumentMappingCreate, ProviderInstrumentMappingInDb,
     ExchangeHolidayCreate, ExchangeHolidayInDb, ExchangeHolidayUpdate,
     WatchlistCreate, WatchlistInDb, WatchlistUpdate,
-    WatchlistItemCreate, WatchlistItemInDb
+    WatchlistItemCreate, WatchlistItemInDb,
+    ExchangeProviderMappingCreate, ExchangeProviderMappingInDb, ExchangeProviderMappingUpdate,
+    SuggestionTypeCreate, SuggestionTypeInDb, SuggestionTypeUpdate,
+    SuggestionCreate, SuggestionInDb, SuggestionUpdate
 } from '../types/apiTypes';
+
+import NProgress from 'nprogress';
+
+// Configure NProgress to not show the spinner
+NProgress.configure({ showSpinner: false });
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -18,6 +26,23 @@ const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';
 
 export class ApiService {
+    private static requestCount = 0;
+
+    private static startLoading() {
+        if (this.requestCount === 0) {
+            NProgress.start();
+        }
+        this.requestCount++;
+    }
+
+    private static finishLoading() {
+        this.requestCount--;
+        if (this.requestCount <= 0) {
+            this.requestCount = 0;
+            NProgress.done();
+        }
+    }
+
     private static getHeaders() {
         const token = localStorage.getItem(TOKEN_KEY);
         const headers: HeadersInit = {
@@ -30,20 +55,31 @@ export class ApiService {
     }
 
     private static async request<T>(url: string, options: RequestInit = {}): Promise<T> {
-        const response = await fetch(`${BASE_URL}${url}`, {
-            ...options,
-            headers: {
-                ...this.getHeaders(),
-                ...options.headers,
-            },
-        });
+        this.startLoading();
+        try {
+            const response = await fetch(`${BASE_URL}${url}`, {
+                ...options,
+                headers: {
+                    ...this.getHeaders(),
+                    ...options.headers,
+                },
+            });
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.detail ? JSON.stringify(errorData.detail) : 'API request failed');
+            if (response.status === 401) {
+                this.logout();
+                window.location.href = '/login';
+                throw new Error('Unauthorized');
+            }
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.detail ? JSON.stringify(errorData.detail) : 'API request failed');
+            }
+
+            return response.json();
+        } finally {
+            this.finishLoading();
         }
-
-        return response.json();
     }
 
     // Caching wrapper for GET requests
@@ -112,13 +148,48 @@ export class ApiService {
         return !!localStorage.getItem(TOKEN_KEY);
     }
 
+    // User Management
+    static async getUsers(userStatus?: number | null): Promise<UserInDb[]> {
+        const query = userStatus !== undefined && userStatus !== null ? `?user_status=${userStatus}` : '';
+        return this.request<UserInDb[]>(`/user/${query}`);
+    }
+
+    static async getUserById(id: number): Promise<UserInDb> {
+        return this.request<UserInDb>(`/user/${id}`);
+    }
+
+    static async updateUser(id: number, data: UserUpdate): Promise<UserInDb> {
+        return this.request<UserInDb>(`/user/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    }
+
+    static async getUserByEmail(email: string): Promise<UserInDb> {
+        return this.request<UserInDb>(`/user/email/${email}`);
+    }
+
+    static async updateUserStatus(id: number, status: number): Promise<UserInDb> {
+        return this.request<UserInDb>(`/user/update_status/${id}?user_status=${status}`, {
+            method: 'PATCH',
+        });
+    }
+
     // Instruments
-    static async getInstruments(exchange: string): Promise<any> {
-        return this.getCached(`/instrument/list/${exchange}`);
+    static async getInstruments(exchange: string, instrumentTypeId?: number): Promise<any> {
+        let url = `/instrument/list/${exchange}`;
+        if (instrumentTypeId) {
+            url += `?instrument_type_id=${instrumentTypeId}`;
+        }
+        return this.getCached(url);
     }
 
     static async getInstrumentDetails(exchangeSymbol: string): Promise<any> {
         return this.getCached(`/instrument/details/${exchangeSymbol}`);
+    }
+
+    static async getInstrumentBySymbol(symbol: string): Promise<InstrumentInDb> {
+        return this.getCached<InstrumentInDb>(`/instrument/by-symbol/${symbol}`);
     }
 
     static async getAllInstruments(): Promise<InstrumentInDb[]> {
@@ -302,8 +373,8 @@ export class ApiService {
     }
 
     // Provider Instrument Mappings
-    static async getInstrumentProviderMappings(instrumentId: number): Promise<ProviderInstrumentMappingInDb[]> {
-        return this.getCached<ProviderInstrumentMappingInDb[]>(`/provider/mapping/instrument/${instrumentId}`);
+    static async getInstrumentProviderMappings(instrumentId: number, forceRefresh = false): Promise<ProviderInstrumentMappingInDb[]> {
+        return this.getCached<ProviderInstrumentMappingInDb[]>(`/provider/mapping/instrument/${instrumentId}`, forceRefresh);
     }
 
     static async createProviderInstrumentMapping(data: ProviderInstrumentMappingCreate): Promise<ProviderInstrumentMappingInDb> {
@@ -312,6 +383,7 @@ export class ApiService {
             body: JSON.stringify(data),
         });
         this.invalidateInstrumentListCache();
+        this.invalidateCache(`/provider/mapping/instrument/${data.instrument_id}`);
         return response;
     }
 
@@ -321,6 +393,7 @@ export class ApiService {
             body: JSON.stringify(data),
         });
         this.invalidateInstrumentListCache();
+        this.invalidateCache(`/provider/mapping/instrument/${data.instrument_id}`);
         return response;
     }
 
@@ -370,6 +443,37 @@ export class ApiService {
         return this.request<void>(`/exchange/holidays/${id}`, {
             method: 'DELETE',
         });
+    }
+
+
+    // Exchange Provider Mappings
+    static async getProvidersForExchange(exchangeId: number): Promise<ExchangeProviderMappingInDb[]> {
+        return this.getCached<ExchangeProviderMappingInDb[]>(`/exchange/${exchangeId}/providers`);
+    }
+
+    static async addProviderToExchange(exchangeId: number, providerId: number, data: ExchangeProviderMappingCreate): Promise<ExchangeProviderMappingInDb> {
+        const response = await this.request<ExchangeProviderMappingInDb>(`/exchange/${exchangeId}/providers/${providerId}`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+        this.invalidateCache(`/exchange/${exchangeId}/providers`);
+        return response;
+    }
+
+    static async updateProviderExchangeMapping(exchangeId: number, providerId: number, data: ExchangeProviderMappingUpdate): Promise<ExchangeProviderMappingInDb> {
+        const response = await this.request<ExchangeProviderMappingInDb>(`/exchange/${exchangeId}/providers/${providerId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+        this.invalidateCache(`/exchange/${exchangeId}/providers`);
+        return response;
+    }
+
+    static async removeProviderFromExchange(exchangeId: number, providerId: number): Promise<void> {
+        await this.request<void>(`/exchange/${exchangeId}/providers/${providerId}`, {
+            method: 'DELETE',
+        });
+        this.invalidateCache(`/exchange/${exchangeId}/providers`);
     }
 
     // Watchlists
@@ -422,5 +526,74 @@ export class ApiService {
         });
         this.invalidateCache('/watchlist/');
         return response;
+    }
+
+    // Suggestion Types
+    static async getSuggestionTypes(): Promise<SuggestionTypeInDb[]> {
+        return this.getCached<SuggestionTypeInDb[]>('/suggestions/types');
+    }
+
+    static async createSuggestionType(data: SuggestionTypeCreate): Promise<SuggestionTypeInDb> {
+        const response = await this.request<SuggestionTypeInDb>('/suggestions/types', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+        this.invalidateCache('/suggestions/types');
+        return response;
+    }
+
+    static async getSuggestionTypeById(id: number): Promise<SuggestionTypeInDb> {
+        return this.request<SuggestionTypeInDb>(`/suggestions/types/${id}`);
+    }
+
+    static async updateSuggestionType(id: number, data: SuggestionTypeUpdate): Promise<SuggestionTypeInDb> {
+        const response = await this.request<SuggestionTypeInDb>(`/suggestions/types/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+        this.invalidateCache('/suggestions/types');
+        return response;
+    }
+
+    static async deleteSuggestionType(id: number): Promise<void> {
+        await this.request<void>(`/suggestions/types/${id}`, {
+            method: 'DELETE',
+        });
+        this.invalidateCache('/suggestions/types');
+    }
+
+    // Suggestions
+    static async getSuggestions(): Promise<SuggestionInDb[]> {
+        // Since suggestions might be updated often, maybe not cache? Or use short cache?
+        // Let's cache but user might need to refresh to see updates.
+        return this.request<SuggestionInDb[]>('/suggestions/');
+    }
+
+    static async getMySuggestions(): Promise<SuggestionInDb[]> {
+        return this.request<SuggestionInDb[]>('/suggestions/my');
+    }
+
+    static async createSuggestion(data: SuggestionCreate): Promise<SuggestionInDb> {
+        return this.request<SuggestionInDb>('/suggestions/', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    static async getSuggestionById(id: number): Promise<SuggestionInDb> {
+        return this.request<SuggestionInDb>(`/suggestions/${id}`);
+    }
+
+    static async updateSuggestion(id: number, data: SuggestionUpdate): Promise<SuggestionInDb> {
+        return this.request<SuggestionInDb>(`/suggestions/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    }
+
+    static async deleteSuggestion(id: number): Promise<void> {
+        return this.request<void>(`/suggestions/${id}`, {
+            method: 'DELETE',
+        });
     }
 }
