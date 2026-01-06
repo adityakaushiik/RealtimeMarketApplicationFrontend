@@ -98,8 +98,23 @@ export class ApiService {
         }
 
         const data = await this.request<T>(url, { method: 'GET' });
-        localStorage.setItem(cacheKey, JSON.stringify(data));
+        try {
+            localStorage.setItem(cacheKey, JSON.stringify(data));
+        } catch (e) {
+            // Handle quota exceeded or other localStorage errors gracefully
+            console.warn('Failed to cache data in localStorage:', e);
+            // Optionally clear old cache entries to make room
+            this.clearOldCacheEntries();
+        }
         return data;
+    }
+
+    // Clear old cache entries when storage is full
+    private static clearOldCacheEntries() {
+        const cacheKeys = Object.keys(localStorage).filter(key => key.startsWith('api_cache_'));
+        // Remove half of the cached entries (oldest first by key order)
+        const keysToRemove = cacheKeys.slice(0, Math.ceil(cacheKeys.length / 2));
+        keysToRemove.forEach(key => localStorage.removeItem(key));
     }
 
     private static invalidateInstrumentListCache() {
@@ -131,7 +146,12 @@ export class ApiService {
     static logout() {
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
-        // Clear API cache on logout
+        // Clear ALL cache on logout to free up storage
+        this.clearAllCache();
+    }
+
+    // Clear all API cache entries
+    static clearAllCache() {
         Object.keys(localStorage).forEach(key => {
             if (key.startsWith('api_cache_')) {
                 localStorage.removeItem(key);
@@ -329,12 +349,13 @@ export class ApiService {
         });
     }
 
+    // Market data should NOT be cached in localStorage due to large size and frequent updates
     static async getIntradayPrices(symbol: string): Promise<PriceHistoryIntradayInDb[]> {
-        return this.getCached<PriceHistoryIntradayInDb[]>(`/marketdata/intraday/${symbol}`, true);
+        return this.request<PriceHistoryIntradayInDb[]>(`/marketdata/intraday/${symbol}`, { method: 'GET' });
     }
 
     static async getDailyPrices(symbol: string): Promise<PriceHistoryDailyInDb[]> {
-        return this.getCached<PriceHistoryDailyInDb[]>(`/marketdata/daily/${symbol}`, true);
+        return this.request<PriceHistoryDailyInDb[]>(`/marketdata/daily/${symbol}`, { method: 'GET' });
     }
 
 
