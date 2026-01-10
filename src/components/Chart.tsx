@@ -7,6 +7,7 @@ import { useDataStore, type MarketData } from '../shared/services/dataService';
 import { useShallow } from 'zustand/react/shallow';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { WebSocketMessageType } from '../shared/utils/CommonConstants';
 import { ApiService } from '../shared/services/apiService';
 import { WebSocketService } from '../shared/services/websocketService';
@@ -46,11 +47,12 @@ const getPrice = (data: MarketData): number | undefined => {
 };
 
 /**
- * Helper to extract volume from MarketData
+ * Helper to extract volume (delta) from MarketData
+ * For UPDATE messages, we use the 'size' field which contains delta volume from backend
  */
 const getVolume = (data: MarketData): number => {
     if (data.type === WebSocketMessageType.UPDATE) {
-        return (data as any).volume ?? 0;
+        return (data as any).size ?? 0; // Use size field for delta volume
     }
     // For snapshot, volume is usually cumulative for the day. 
     // Adding it to a single candle would create a massive spike.
@@ -63,14 +65,40 @@ interface ChartProps {
     currency?: string;
 }
 
-const Chart = ({ symbol, currency }: ChartProps) => {
+const Chart = ({ symbol }: ChartProps) => {
     // --- State ---
     const { theme } = useTheme();
     const [timeframe, setTimeframe] = useState<Timeframe>(TIMEFRAMES.ONE_DAY);
     const [isLoading, setIsLoading] = useState(false);
     const [candleCount, setCandleCount] = useState(0);
-    const [lastUpdateTime, setLastUpdateTime] = useState<string>('--:--:--');
+    const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
     const [currentPrice, setCurrentPrice] = useState<number | null>(null);
+
+    // --- Data Store Subscription ---
+    // Subscribe to the specific symbol's data for live updates
+    const symbolDataArray = useDataStore(
+        useShallow((state: any) => state.data[symbol] as MarketData[] | undefined)
+    );
+
+    const prevClose = useMemo(() => {
+        if (!symbolDataArray) return undefined;
+        // Find latest snapshot with prevClose
+        for (let i = symbolDataArray.length - 1; i >= 0; i--) {
+            const msg = symbolDataArray[i];
+            if (msg.type === WebSocketMessageType.SNAPSHOT && 'prevClose' in msg) {
+                return (msg as any).prevClose;
+            }
+        }
+        return undefined;
+    }, [symbolDataArray]);
+
+    const percentChange = useMemo(() => {
+        if (currentPrice !== null && prevClose) {
+             const change = currentPrice - prevClose;
+             return (change / prevClose) * 100;
+        }
+        return null;
+    }, [currentPrice, prevClose]);
 
     const isDark = useMemo(() => {
         if (theme === 'dark') return true;
@@ -96,6 +124,7 @@ const Chart = ({ symbol, currency }: ChartProps) => {
     // Track the last candle and volume to properly merge live updates
     const lastCandleRef = useRef<CandlestickData | null>(null);
     const lastVolumeRef = useRef<HistogramData | null>(null);
+
 
     // --- Legend & Hover State ---
     const isHovering = useRef(false);
@@ -159,9 +188,7 @@ const Chart = ({ symbol, currency }: ChartProps) => {
 
     // --- Data Store Subscription ---
     // Subscribe to the specific symbol's data for live updates
-    const symbolDataArray = useDataStore(
-        useShallow((state: any) => state.data[symbol] as MarketData[] | undefined)
-    );
+    // (Moved to top of component)
 
     // Get the latest tick (memoized)
     const latestTick = useMemo(() => {
@@ -404,9 +431,9 @@ const Chart = ({ symbol, currency }: ChartProps) => {
 
         const price = getPrice(latestTick);
         if (price === undefined || price === 0 || price === null) return;
-        const volume = getVolume(latestTick);
 
-
+        // getVolume now returns delta volume directly from backend's 'size' field
+        const deltaVolume = getVolume(latestTick);
 
         let timestamp = latestTick.timestamp ? Number(latestTick.timestamp) : Date.now() / 1000;
 
@@ -422,7 +449,7 @@ const Chart = ({ symbol, currency }: ChartProps) => {
             lastCandleRef.current,
             lastVolumeRef.current,
             price,
-            volume,
+            deltaVolume,
             timestamp,
             timeframe
         );
@@ -446,7 +473,7 @@ const Chart = ({ symbol, currency }: ChartProps) => {
             setCandleCount(prev => prev + 1);
         }
 
-        setLastUpdateTime(new Date().toLocaleTimeString());
+        setLastUpdateTime(new Date(timestamp * 1000));
 
     }, [latestTick, timeframe]);
 
@@ -463,7 +490,11 @@ const Chart = ({ symbol, currency }: ChartProps) => {
                         <span className="text-2xl font-bold tracking-tight text-foreground">
                             {currentPrice ? currentPrice.toFixed(2) : '--'}
                         </span>
-                        <span className="text-sm font-medium text-muted-foreground">{currency || ''}</span>
+                        {percentChange !== null && (
+                             <span className={`text-sm font-medium ${percentChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                {percentChange >= 0 ? '+' : ''}{percentChange.toFixed(2)}%
+                             </span>
+                        )}
                         {isLoading && <span className="text-[10px] sm:text-xs text-muted-foreground animate-pulse ml-2">Loading...</span>}
                     </div>
                 </div>
@@ -510,7 +541,28 @@ const Chart = ({ symbol, currency }: ChartProps) => {
                     Candles: <span className="font-medium text-foreground">{candleCount}</span>
                 </div>
                 <div className="hidden sm:block">
-                    Last Update: <span className="font-medium text-foreground">{lastUpdateTime}</span>
+                     <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <div className="cursor-help flex items-center gap-1">
+                                    Last Updated: 
+                                    <span className="font-medium text-foreground">
+                                        {lastUpdateTime ? lastUpdateTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false }) : '--:--'} IST
+                                    </span>
+                                </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>
+                                    {lastUpdateTime ? lastUpdateTime.toLocaleString('en-IN', { 
+                                        timeZone: 'Asia/Kolkata', 
+                                        day: '2-digit', month: 'short', year: 'numeric',
+                                        hour: '2-digit', minute: '2-digit', second: '2-digit', 
+                                        hour12: false 
+                                    }) : ''} IST
+                                </p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                 </div>
             </div>
         </div>

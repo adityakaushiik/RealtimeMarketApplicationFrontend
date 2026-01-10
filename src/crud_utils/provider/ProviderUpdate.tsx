@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ApiService } from '../../shared/services/apiService';
-import type { ProviderUpdate } from '../../shared/types/apiTypes';
+import type { ProviderUpdate, ProviderInDb } from '../../shared/types/apiTypes';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
 
 interface ProviderUpdateProps {
@@ -13,6 +14,7 @@ interface ProviderUpdateProps {
 
 export function ProviderUpdateComponent({ initialProviderId, onUpdateComplete }: ProviderUpdateProps) {
     const [providerId, setProviderId] = useState<string>(initialProviderId ? initialProviderId.toString() : '');
+    const [providers, setProviders] = useState<ProviderInDb[]>([]);
     const [formData, setFormData] = useState<ProviderUpdate>({
         name: '',
         code: '',
@@ -26,6 +28,18 @@ export function ProviderUpdateComponent({ initialProviderId, onUpdateComplete }:
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
     const [loaded, setLoaded] = useState(false);
+
+    useEffect(() => {
+        const loadList = async () => {
+            try {
+                const list = await ApiService.getProviders();
+                setProviders(list);
+            } catch (error) {
+                console.error("Failed to load providers", error);
+            }
+        };
+        loadList();
+    }, []);
 
     useEffect(() => {
         if (initialProviderId) {
@@ -111,25 +125,27 @@ export function ProviderUpdateComponent({ initialProviderId, onUpdateComplete }:
     return (
         <div className="space-y-4">
             {!initialProviderId && (
-                <form onSubmit={handleFetch} className="flex space-x-2 items-end mb-6">
-                    <div className="flex-1 space-y-2">
-                        <Label htmlFor="providerId">Provider ID</Label>
-                        <Input
-                            id="providerId"
-                            value={providerId}
-                            onChange={(e) => {
-                                setProviderId(e.target.value);
-                                setLoaded(false);
-                                setSuccess(false);
-                            }}
-                            placeholder="Enter ID"
-                            type="number"
-                        />
-                    </div>
-                    <Button type="submit" disabled={fetching || !providerId}>
-                        {fetching ? '...' : 'Load'}
-                    </Button>
-                </form>
+                <div className="space-y-2 mb-6">
+                    <Label>Select Provider to Update</Label>
+                    <Select
+                        value={providerId}
+                        onValueChange={(val) => {
+                            setProviderId(val);
+                            fetchProvider(parseInt(val));
+                        }}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select Provider" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {providers.map(p => (
+                                <SelectItem key={p.id} value={p.id.toString()}>
+                                    {p.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             )}
 
             {error && <p className="text-sm text-red-500">{error}</p>}

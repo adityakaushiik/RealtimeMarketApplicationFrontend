@@ -82,8 +82,8 @@ class WebSocketManager {
                             if (remaining === 36) {
                                 message = parseSnapshot(data);
                             }
-                            // Update has 20 bytes of data after symbol
-                            else if (remaining === 20) {
+                            // Update has 28 bytes of data after symbol (timestamp: 8 + price: 4 + volume: 8 + size: 8)
+                            else if (remaining === 28) {
                                 message = parseUpdate(data);
                             } else {
                                 console.warn("Received binary message with unexpected length:", remaining);

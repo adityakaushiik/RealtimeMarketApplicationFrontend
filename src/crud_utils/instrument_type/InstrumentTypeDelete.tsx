@@ -1,17 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { ApiService } from '../../shared/services/apiService';
+import type { InstrumentTypeInDb } from '../../shared/types/apiTypes';
 
 export function InstrumentTypeDeleteComponent() {
     const [id, setId] = useState('');
+    const [types, setTypes] = useState<InstrumentTypeInDb[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
 
-    const handleDelete = async (e: React.FormEvent) => {
-        e.preventDefault();
+    useEffect(() => {
+        const load = async () => {
+             const list = await ApiService.getInstrumentTypes();
+             setTypes(list);
+        };
+        load();
+    }, []);
+
+    const handleDelete = async () => {
         if (!window.confirm('Are you sure you want to delete this instrument type? This might affect associated instruments.')) {
             return;
         }
@@ -24,6 +33,8 @@ export function InstrumentTypeDeleteComponent() {
             await ApiService.deleteInstrumentType(parseInt(id));
             setSuccess(true);
             setId('');
+            const list = await ApiService.getInstrumentTypes();
+            setTypes(list);
         } catch (err: any) {
             setError(err.message || 'Failed to delete instrument type');
         } finally {
@@ -32,22 +43,31 @@ export function InstrumentTypeDeleteComponent() {
     };
 
     return (
-        <form onSubmit={handleDelete} className="space-y-4">
+        <div className="space-y-4">
             <div className="space-y-2">
-                <Label htmlFor="delete-type-id">Instrument Type ID</Label>
+                <Label>Select Instrument Type to Delete</Label>
                 <div className="flex space-x-2">
-                    <Input
-                        id="delete-type-id"
-                        value={id}
-                        onChange={(e) => {
-                            setId(e.target.value);
-                            setSuccess(false);
-                        }}
-                        placeholder="Enter ID to delete"
-                        type="number"
-                        required
-                    />
-                    <Button type="submit" variant="destructive" disabled={loading || !id}>
+                     <div className="flex-1">
+                        <Select
+                            value={id}
+                            onValueChange={(val) => {
+                                setId(val);
+                                setSuccess(false);
+                            }}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select Type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {types.map(t => (
+                                    <SelectItem key={t.id} value={t.id.toString()}>
+                                        {t.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <Button onClick={handleDelete} variant="destructive" disabled={loading || !id}>
                         {loading ? 'Deleting...' : 'Delete'}
                     </Button>
                 </div>
@@ -55,6 +75,6 @@ export function InstrumentTypeDeleteComponent() {
 
             {error && <p className="text-sm text-red-500">{error}</p>}
             {success && <p className="text-sm text-green-500">Instrument Type deleted successfully!</p>}
-        </form>
+        </div>
     );
 }

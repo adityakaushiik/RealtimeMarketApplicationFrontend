@@ -222,7 +222,7 @@ export function StockDetailPage() {
 
             <Chart symbol={symbol} currency={currency} />
 
-            {
+            {/* {
                 mappings.length > 0 && (
                     <Card>
                         <CardHeader className="p-4 sm:p-6">
@@ -239,9 +239,9 @@ export function StockDetailPage() {
                         </CardContent>
                     </Card>
                 )
-            }
+            } */}
 
-            <div className="stats-grid">
+            {/* <div className="stats-grid">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 sm:p-4 pb-1 sm:pb-2">
                         <CardTitle className="text-xs sm:text-sm font-medium">
@@ -296,7 +296,7 @@ export function StockDetailPage() {
                         </p>
                     </CardContent>
                 </Card>
-            </div>
+            </div> */}
         </div >
     );
 }

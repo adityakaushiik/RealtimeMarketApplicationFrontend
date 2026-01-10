@@ -1,18 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { ApiService } from '../../shared/services/apiService';
-import type { InstrumentTypeUpdate } from '../../shared/types/apiTypes';
+import type { InstrumentTypeUpdate, InstrumentTypeInDb } from '../../shared/types/apiTypes';
 
 export function InstrumentTypeUpdateComponent() {
     const [id, setId] = useState('');
+    const [types, setTypes] = useState<InstrumentTypeInDb[]>([]);
     const [formData, setFormData] = useState<InstrumentTypeUpdate>({});
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(false);
     const [loaded, setLoaded] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+
+    useEffect(() => {
+        const load = async () => {
+             const list = await ApiService.getInstrumentTypes();
+             setTypes(list);
+        };
+        load();
+    }, []);
 
     const handleFetch = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -70,25 +80,27 @@ export function InstrumentTypeUpdateComponent() {
 
     return (
         <div className="space-y-4">
-            <form onSubmit={handleFetch} className="flex space-x-2 items-end mb-6">
-                <div className="flex-1 space-y-2">
-                    <Label htmlFor="typeId">Instrument Type ID</Label>
-                    <Input
-                        id="typeId"
-                        value={id}
-                        onChange={(e) => {
-                            setId(e.target.value);
-                            setLoaded(false);
-                            setSuccess(false);
-                        }}
-                        placeholder="Enter ID"
-                        type="number"
-                    />
-                </div>
-                <Button type="submit" disabled={fetching || !id}>
-                    {fetching ? '...' : 'Load'}
-                </Button>
-            </form>
+            <div className="space-y-2 mb-6">
+                <Label>Select Instrument Type to Update</Label>
+                 <Select
+                    value={id}
+                    onValueChange={(val) => {
+                        setId(val);
+                        fetchData(parseInt(val));
+                    }}
+                >
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {types.map(t => (
+                            <SelectItem key={t.id} value={t.id.toString()}>
+                                {t.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
 
             {error && <p className="text-sm text-red-500">{error}</p>}
 

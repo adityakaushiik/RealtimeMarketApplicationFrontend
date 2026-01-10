@@ -18,6 +18,7 @@ export interface UpdateWebsocketMessage {
     timestamp: number;
     price: number;      // float32 BE
     volume: number;
+    size: number;       // uint64 BE - delta volume from backend
 }
 
 
@@ -82,8 +83,8 @@ export function parseUpdate(data: Uint8Array): UpdateWebsocketMessage {
     const symbol = new TextDecoder().decode(data.slice(0, nullIndex));
     offset = nullIndex + 1;
 
-    // Validate remaining length: 8 (timestamp) + 4 (price) + 8 (volume) = 20 bytes
-    if (data.length - offset < 20) {
+    // Validate remaining length: 8 (timestamp) + 4 (price) + 8 (volume) + 8 (size) = 28 bytes
+    if (data.length - offset < 28) {
         throw new Error('Invalid update: Insufficient data length');
     }
 
@@ -92,9 +93,11 @@ export function parseUpdate(data: Uint8Array): UpdateWebsocketMessage {
     const price = view.getFloat32(offset, false);
     offset += 4;
     const volume = Number(view.getBigUint64(offset, false));
+    offset += 8;
+    const size = Number(view.getBigUint64(offset, false));
 
     return {
         type: WebSocketMessageType.UPDATE,
-        symbol, timestamp, price, volume
+        symbol, timestamp, price, volume, size
     };
 }

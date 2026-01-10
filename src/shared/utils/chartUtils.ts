@@ -206,7 +206,7 @@ export const updateLiveCandle = (
     const updatedVolume = {
         ...lastVolume!,
         time: lastVolume!.time, // Ensure time is preserved
-        value: (lastVolume ? lastVolume.value : 0) + volume,
+        value: (lastVolume ? lastVolume.value : 0) + volume, // Accumulate delta volume from backend
         color: updatedCandle.close >= updatedCandle.open ? 'rgba(38, 166, 154, 0.5)' : 'rgba(239, 83, 80, 0.5)'
     };
 

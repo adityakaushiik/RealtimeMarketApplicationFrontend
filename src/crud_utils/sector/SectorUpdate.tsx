@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ApiService } from '../../shared/services/apiService';
-import type { SectorUpdate } from '../../shared/types/apiTypes';
+import type { SectorUpdate, SectorInDb } from '../../shared/types/apiTypes';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
 
 interface SectorUpdateProps {
@@ -13,6 +14,7 @@ interface SectorUpdateProps {
 
 export function SectorUpdateComponent({ initialSectorId, onUpdateComplete }: SectorUpdateProps) {
     const [sectorId, setSectorId] = useState<string>(initialSectorId ? initialSectorId.toString() : '');
+    const [sectors, setSectors] = useState<SectorInDb[]>([]);
     const [formData, setFormData] = useState<SectorUpdate>({
         name: '',
         description: ''
@@ -22,6 +24,14 @@ export function SectorUpdateComponent({ initialSectorId, onUpdateComplete }: Sec
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
     const [loaded, setLoaded] = useState(false);
+
+    useEffect(() => {
+        const load = async () => {
+             const list = await ApiService.getSectorList();
+             setSectors(list);
+        };
+        load();
+    }, []);
 
     useEffect(() => {
         if (initialSectorId) {
@@ -88,21 +98,27 @@ export function SectorUpdateComponent({ initialSectorId, onUpdateComplete }: Sec
     return (
         <div className="space-y-4">
             {!initialSectorId && (
-                <form onSubmit={handleFetch} className="flex space-x-2 items-end mb-6">
-                    <div className="flex-1 space-y-2">
-                        <Label htmlFor="sectorId">Sector ID</Label>
-                        <Input
-                            id="sectorId"
-                            value={sectorId}
-                            onChange={handleIdChange}
-                            placeholder="Enter ID"
-                            type="number"
-                        />
-                    </div>
-                    <Button type="submit" disabled={fetching || !sectorId}>
-                        {fetching ? '...' : 'Load'}
-                    </Button>
-                </form>
+                <div className="space-y-2 mb-6">
+                    <Label>Select Sector to Update</Label>
+                    <Select
+                        value={sectorId}
+                        onValueChange={(val) => {
+                            setSectorId(val);
+                            fetchSector(parseInt(val));
+                        }}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select Sector" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {sectors.map(s => (
+                                <SelectItem key={s.id} value={s.id.toString()}>
+                                    {s.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             )}
 
             {error && <p className="text-sm text-red-500">{error}</p>}

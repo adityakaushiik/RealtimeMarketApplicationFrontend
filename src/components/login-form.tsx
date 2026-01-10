@@ -72,12 +72,12 @@ export function LoginForm({
                 <Field>
                     <div className="flex items-center">
                         <FieldLabel htmlFor="password">Password</FieldLabel>
-                        <a
+                        {/* <a
                             href="#"
                             className="ml-auto text-sm underline-offset-4 hover:underline"
                         >
                             Forgot your password?
-                        </a>
+                        </a> */}
                     </div>
                     <Input
                         id="password"
@@ -93,7 +93,7 @@ export function LoginForm({
                         {loading ? "Logging in..." : "Login"}
                     </Button>
                 </Field>
-                <FieldSeparator>Or continue with</FieldSeparator>
+                {/* <FieldSeparator>Or continue with</FieldSeparator>
                 <Field>
                     <Button variant="outline" type="button" disabled={true}>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-5 h-5 mr-2">
@@ -105,6 +105,14 @@ export function LoginForm({
                         Login with Google
                     </Button>
                     <FieldDescription className="text-center">
+                        Don&apos;t have an account?{" "}
+                        <a href="/register" className="underline underline-offset-4">
+                            Sign up
+                        </a>
+                    </FieldDescription>
+                </Field> */}
+                <Field>
+                     <FieldDescription className="text-center">
                         Don&apos;t have an account?{" "}
                         <a href="/register" className="underline underline-offset-4">
                             Sign up
