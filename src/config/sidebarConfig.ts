@@ -5,7 +5,8 @@ import {
     type LucideIcon,
     PieChart,
     UserCog,
-    MessageSquare
+    MessageSquare,
+    Activity
 } from "lucide-react"
 import { UserRoles } from "@/shared/utils/CommonConstants";
 
@@ -58,6 +59,12 @@ export const sidebarConfig: SidebarItem[] = [
         title: "User Suggestions",
         url: "/user-suggestions",
         icon: MessageSquare,
+        roles: [UserRoles.ADMIN],
+    },
+    {
+        title: "Recording",
+        url: "/recording-instruments",
+        icon: Activity,
         roles: [UserRoles.ADMIN],
     },
     {

@@ -285,6 +285,10 @@ export class ApiService {
         });
     }
 
+    static async getRecordingInstruments(): Promise<InstrumentInDb[]> {
+        return this.request<InstrumentInDb[]>('/instrument/recording/all');
+    }
+
     // Exchanges
     static async getExchanges(): Promise<ExchangeInDb[]> {
         return this.getCached<ExchangeInDb[]>('/exchange/');
@@ -349,7 +353,7 @@ export class ApiService {
         });
     }
 
-    // Market data should NOT be cached in localStorage due to large size and frequent updates
+    // Market data
     static async getIntradayPrices(symbol: string): Promise<PriceHistoryIntradayInDb[]> {
         return this.request<PriceHistoryIntradayInDb[]>(`/marketdata/intraday/${symbol}`, { method: 'GET' });
     }
@@ -438,9 +442,6 @@ export class ApiService {
     }
 
     static async updateExchangeHoliday(id: number, data: ExchangeHolidayUpdate): Promise<ExchangeHolidayInDb> {
-        // Warning: We don't have the exchange_id here easily to invalidate the specific list without fetching.
-        // For now, we might need to rely on the user refreshing or more aggressive invalidation if we had a way to know the exchange_id.
-        // Or we can return the updated object which usually contains the exchange_id.
         const response = await this.request<ExchangeHolidayInDb>(`/exchange/holidays/${id}`, {
             method: 'PUT',
             body: JSON.stringify(data),
@@ -450,11 +451,6 @@ export class ApiService {
     }
 
     static async deleteExchangeHoliday(id: number): Promise<void> {
-        // We can't easily invalidate the specific list here without knowing the exchange_id.
-        // We might need to fetch it first or just clear all holiday caches if we could pattern match.
-        // For now, let's assume the caller handles refresh or we just leave it.
-        // Actually, let's try to fetch it first? No that's expensive.
-        // Let's iterate and clear all exchange holiday caches?
         Object.keys(localStorage).forEach(key => {
             if (key.includes('/holidays')) {
                 localStorage.removeItem(key);
@@ -537,7 +533,7 @@ export class ApiService {
             method: 'POST',
             body: JSON.stringify(data),
         });
-        this.invalidateCache('/watchlist/'); // In case the list view includes items count or items
+        this.invalidateCache('/watchlist/');
         return response;
     }
 
@@ -546,6 +542,20 @@ export class ApiService {
             method: 'DELETE',
         });
         this.invalidateCache('/watchlist/');
+        return response;
+    }
+
+    // Dashboard Watchlists (Restore)
+    static async getDashboardWatchlists(): Promise<WatchlistInDb[]> {
+        return this.request<WatchlistInDb[]>('/watchlist/dashboard');
+    }
+
+    static async setWatchlistShowOnDashboard(watchlistId: number, showOnDashboard: boolean): Promise<WatchlistInDb> {
+        const response = await this.request<WatchlistInDb>(`/watchlist/${watchlistId}/show-on-dashboard?show_on_dashboard=${showOnDashboard}`, {
+            method: 'PATCH',
+        });
+        this.invalidateCache('/watchlist/');
+        this.invalidateCache('/watchlist/dashboard');
         return response;
     }
 
@@ -585,8 +595,6 @@ export class ApiService {
 
     // Suggestions
     static async getSuggestions(): Promise<SuggestionInDb[]> {
-        // Since suggestions might be updated often, maybe not cache? Or use short cache?
-        // Let's cache but user might need to refresh to see updates.
         return this.request<SuggestionInDb[]>('/suggestions/');
     }
 

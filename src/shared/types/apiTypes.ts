@@ -234,10 +234,12 @@ export interface ExchangeHolidayUpdate {
 // Watchlist Types
 export interface WatchlistCreate {
     name: string;
+    show_on_dashboard?: boolean;
 }
 
 export interface WatchlistUpdate {
     name?: string | null;
+    show_on_dashboard?: boolean | null;
 }
 
 export interface WatchlistItemCreate {
@@ -255,7 +257,9 @@ export interface WatchlistInDb {
     id: number;
     user_id: number;
     name: string;
+    show_on_dashboard?: boolean;
     items?: WatchlistItemInDb[];
+    instruments?: InstrumentInDb[]; // Populated by dashboard API
 }
 
 // Exchange Provider Mapping Types
@@ -319,5 +323,3 @@ export interface SuggestionUpdate {
     description?: string | null;
     status?: string | null;
 }
-
-

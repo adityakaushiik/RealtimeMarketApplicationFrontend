@@ -3,7 +3,7 @@ import { ApiService } from "@/shared/services/apiService";
 import type { WatchlistInDb } from "@/shared/types/apiTypes";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Plus, ArrowRight } from "lucide-react";
+import { Plus, ArrowRight, Pin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { WatchlistCreateComponent } from "@/crud_utils/watchlist/WatchlistCreate";
 import {
@@ -86,8 +86,17 @@ export function WatchlistPage() {
                             className="group relative cursor-pointer hover:shadow-lg transition-all duration-300 border-border/50 bg-card/50 backdrop-blur"
                             onClick={() => navigate(`/watchlist/${watchlist.id}`)}
                         >
+                            {/* Pin Badge for Dashboard Watchlists */}
+                            {watchlist.show_on_dashboard && (
+                                <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+                                    <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary text-[10px] sm:text-xs font-medium">
+                                        <Pin className="h-3 w-3" />
+                                        <span className="hidden sm:inline">Dashboard</span>
+                                    </div>
+                                </div>
+                            )}
                             <CardHeader className="p-4 sm:p-6">
-                                <CardTitle className="flex justify-between items-center text-base sm:text-lg">
+                                <CardTitle className="flex justify-between items-center text-base sm:text-lg pr-16 sm:pr-20">
                                     <span className="truncate">{watchlist.name}</span>
                                     <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                                 </CardTitle>
@@ -97,7 +106,7 @@ export function WatchlistPage() {
                             </CardHeader>
                             <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
                                 <div className="text-xs sm:text-sm text-muted-foreground">
-                                    {watchlist.items ? `${watchlist.items.length} items` : 'View items'}
+                                    {watchlist.items?.length || watchlist.instruments?.length || 0} items
                                 </div>
                             </CardContent>
                         </Card>

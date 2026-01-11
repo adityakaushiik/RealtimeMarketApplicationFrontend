@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ApiService } from "@/shared/services/apiService";
-import type { InstrumentInDb, ExchangeInDb, InstrumentTypeInDb, SectorInDb } from "@/shared/types/apiTypes";
+import type { InstrumentInDb, ExchangeInDb, InstrumentTypeInDb, SectorInDb, WatchlistInDb } from "@/shared/types/apiTypes";
 import { useAppStore } from "@/shared/store/appStore";
 import InstrumentPriceDeferred from "@/components/InstrumentPriceDeferred";
 import { MarketStatusIndicator } from "@/components/MarketStatusIndicator";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Search } from "lucide-react";
+import { ArrowRight, Search, ListPlus, Pin } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export const DashboardPage = () => {
+    const [dashboardWatchlists, setDashboardWatchlists] = useState<WatchlistInDb[]>([]);
     const [instruments, setInstruments] = useState<InstrumentInDb[]>([]);
     const [marketIndices, setMarketIndices] = useState<InstrumentInDb[]>([]);
     const [currentExchange, setCurrentExchange] = useState<ExchangeInDb | null>(null);
@@ -29,18 +31,45 @@ export const DashboardPage = () => {
     }, []);
 
     useEffect(() => {
-        const fetchInstruments = async () => {
+        const fetchDashboardWatchlists = async () => {
+            try {
+                const data = await ApiService.getDashboardWatchlists();
+                setDashboardWatchlists(data);
+
+                // Extract all instruments from watchlists
+                const allInstruments: InstrumentInDb[] = [];
+                data.forEach(watchlist => {
+                    if (watchlist.instruments && watchlist.instruments.length > 0) {
+                        allInstruments.push(...watchlist.instruments);
+                    } else if (watchlist.items && watchlist.items.length > 0) {
+                        // Check if items are actually instruments
+                        const firstItem = watchlist.items[0] as unknown as InstrumentInDb;
+                        if (firstItem.symbol) {
+                            allInstruments.push(...(watchlist.items as unknown as InstrumentInDb[]));
+                        } else {
+                            // Standard items
+                            watchlist.items.forEach(item => {
+                                if (item.instrument) allInstruments.push(item.instrument);
+                            });
+                        }
+                    }
+                });
+
+                // Remove duplicates based on instrument id
+                const uniqueInstruments = allInstruments.filter(
+                    (inst, index, self) => index === self.findIndex(i => i.id === inst.id)
+                );
+                setInstruments(uniqueInstruments);
+            } catch (error) {
+                console.error("Failed to fetch dashboard watchlists:", error);
+            }
+        };
+        fetchDashboardWatchlists();
+
+        const fetchMarketIndices = async () => {
             if (!selectedExchange) return;
             try {
-                // Fetch Equities (Type ID 1)
-                const equitiesData = await ApiService.getInstruments(selectedExchange, 1);
-                if (Array.isArray(equitiesData)) {
-                    setInstruments(equitiesData);
-                } else if (typeof equitiesData === 'object' && equitiesData !== null) {
-                    setInstruments(Object.values(equitiesData));
-                }
-
-                // Fetch Market Indices (Type ID 7)
+                // Fetch Market Indices (Type ID 2)
                 const indicesData = await ApiService.getInstruments(selectedExchange, 2);
                 if (Array.isArray(indicesData)) {
                     setMarketIndices(indicesData);
@@ -48,10 +77,10 @@ export const DashboardPage = () => {
                     setMarketIndices(Object.values(indicesData));
                 }
             } catch (error) {
-                console.error("Failed to fetch instruments:", error);
+                console.error("Failed to fetch market indices:", error);
             }
         };
-        fetchInstruments();
+        fetchMarketIndices();
 
         const fetchExchange = async () => {
             if (!selectedExchange) {
@@ -128,6 +157,24 @@ export const DashboardPage = () => {
         instrument.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    // Helper to get watchlist name for an instrument
+    const getWatchlistForInstrument = (instrumentId: number): WatchlistInDb | undefined => {
+        return dashboardWatchlists.find(wl => {
+            if (wl.instruments?.some(inst => inst.id === instrumentId)) return true;
+
+            // Check items if they are instruments
+            if (wl.items && wl.items.length > 0) {
+                const first = wl.items[0] as unknown as InstrumentInDb;
+                if (first.symbol) {
+                    return (wl.items as unknown as InstrumentInDb[]).some(inst => inst.id === instrumentId);
+                }
+                // Normal items
+                return wl.items.some(item => item.instrument?.id === instrumentId);
+            }
+            return false;
+        });
+    };
+
     return (
         <div className="page-container flex flex-col section-gap">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -137,7 +184,7 @@ export const DashboardPage = () => {
                         <MarketStatusIndicator exchange={currentExchange} />
                     </div>
                     <p className="page-subtitle mt-1">
-                        {selectedExchange || 'All Exchanges'} &bull; {instruments.length} Active Instruments
+                        {selectedExchange || 'All Exchanges'} &bull; {instruments.length} Watchlist Instruments
                     </p>
                 </div>
 
@@ -175,63 +222,91 @@ export const DashboardPage = () => {
             )}
 
             <div className="flex flex-col gap-2 sm:gap-3">
-                {filteredInstruments.length > 0 ? (
-                    filteredInstruments.map((instrument) => (
-                        <div
-                            key={instrument.id}
-                            onClick={() => navigate(`/stocks/${instrument.symbol}`)}
-                            className="group relative flex items-center justify-between p-3 sm:p-4 bg-card hover:bg-accent/50 border rounded-lg sm:rounded-xl shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
-                        >
-                            {/* Status Indicator Bar */}
-                            <div className={`absolute left-0 top-0 bottom-0 w-1 ${!instrument.delisted ? 'bg-gradient-to-b from-green-500 to-emerald-600' : 'bg-red-500'} opacity-80`} />
-
-                            <div className="flex items-center gap-3 sm:gap-4 pl-2 sm:pl-3 min-w-0 flex-1">
-                                <div className="flex flex-col min-w-0">
-                                    <div className="flex items-center gap-1.5 sm:gap-2">
-                                        <span className="text-base sm:text-lg font-bold tracking-tight group-hover:text-primary transition-colors">
-                                            {instrument.symbol}
-                                        </span>
-                                        {instrument.delisted && (
-                                            <Badge variant="destructive" className="text-[10px] py-0 h-4">Delisted</Badge>
-                                        )}
-                                    </div>
-                                    <span className="text-[11px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider truncate max-w-[120px] sm:max-w-[200px] md:max-w-[300px]">
-                                        {instrument.name}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-3 sm:gap-6 md:gap-10 shrink-0">
-                                <div className="hidden md:flex flex-col items-end min-w-[80px]">
-                                    <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Sector</span>
-                                    <span className="text-sm font-medium">{instrument.sector_id ? sectorMap[instrument.sector_id] || instrument.sector_id : 'N/A'}</span>
-                                </div>
-
-                                <div className="hidden md:flex flex-col items-end min-w-[80px]">
-                                    <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Type</span>
-                                    <span className="text-sm font-medium">{typeMap[instrument.instrument_type_id] || instrument.instrument_type_id}</span>
-                                </div>
-
-                                <div className="flex flex-col items-end min-w-[70px] sm:min-w-[100px]">
-                                    <InstrumentPriceDeferred
-                                        symbol={instrument.symbol}
-                                        className="text-sm sm:text-lg font-mono font-bold"
-                                    />
-                                </div>
-
-                                <div className="pr-1 sm:pr-2 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all">
-                                    <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
-                                </div>
-                            </div>
+                {dashboardWatchlists.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 sm:py-20 text-center border-2 border-dashed rounded-xl bg-gradient-to-br from-muted/20 to-muted/5">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 mb-6 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                            <ListPlus className="h-8 w-8 sm:h-10 sm:w-10 text-primary/70" />
                         </div>
-                    ))
+                        <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-2">
+                            No Dashboard Watchlists
+                        </h3>
+                        <p className="text-sm sm:text-base text-muted-foreground/80 max-w-md mb-6 px-4">
+                            Create a watchlist and enable <span className="inline-flex items-center gap-1 text-primary font-medium"><Pin className="h-3.5 w-3.5" />Show on Dashboard</span> to see your favorite instruments here.
+                        </p>
+                        <Button
+                            onClick={() => navigate('/watchlist')}
+                            className="gap-2"
+                        >
+                            <ListPlus className="h-4 w-4" />
+                            Go to Watchlists
+                        </Button>
+                    </div>
+                ) : filteredInstruments.length > 0 ? (
+                    filteredInstruments.map((instrument) => {
+                        const watchlist = getWatchlistForInstrument(instrument.id);
+                        return (
+                            <div
+                                key={instrument.id}
+                                onClick={() => navigate(`/stocks/${instrument.symbol}`)}
+                                className="group relative flex items-center justify-between p-3 sm:p-4 bg-card hover:bg-accent/50 border rounded-lg sm:rounded-xl shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
+                            >
+                                {/* Status Indicator Bar */}
+                                <div className={`absolute left-0 top-0 bottom-0 w-1 ${!instrument.delisted ? 'bg-gradient-to-b from-green-500 to-emerald-600' : 'bg-red-500'} opacity-80`} />
+
+                                <div className="flex items-center gap-3 sm:gap-4 pl-2 sm:pl-3 min-w-0 flex-1">
+                                    <div className="flex flex-col min-w-0">
+                                        <div className="flex items-center gap-1.5 sm:gap-2">
+                                            <span className="text-base sm:text-lg font-bold tracking-tight group-hover:text-primary transition-colors">
+                                                {instrument.symbol}
+                                            </span>
+                                            {instrument.delisted && (
+                                                <Badge variant="destructive" className="text-[10px] py-0 h-4">Delisted</Badge>
+                                            )}
+                                            {watchlist && (
+                                                <Badge variant="secondary" className="text-[10px] py-0 h-4 gap-1">
+                                                    <Pin className="h-2.5 w-2.5" />
+                                                    {watchlist.name}
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <span className="text-[11px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider truncate max-w-[120px] sm:max-w-[200px] md:max-w-[300px]">
+                                            {instrument.name}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-3 sm:gap-6 md:gap-10 shrink-0">
+                                    <div className="hidden md:flex flex-col items-end min-w-[80px]">
+                                        <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Sector</span>
+                                        <span className="text-sm font-medium">{instrument.sector_id ? sectorMap[instrument.sector_id] || instrument.sector_id : 'N/A'}</span>
+                                    </div>
+
+                                    <div className="hidden md:flex flex-col items-end min-w-[80px]">
+                                        <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Type</span>
+                                        <span className="text-sm font-medium">{typeMap[instrument.instrument_type_id] || instrument.instrument_type_id}</span>
+                                    </div>
+
+                                    <div className="flex flex-col items-end min-w-[70px] sm:min-w-[100px]">
+                                        <InstrumentPriceDeferred
+                                            symbol={instrument.symbol}
+                                            className="text-sm sm:text-lg font-mono font-bold"
+                                        />
+                                    </div>
+
+                                    <div className="pr-1 sm:pr-2 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all">
+                                        <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })
                 ) : (
                     <div className="flex flex-col items-center justify-center py-10 sm:py-16 text-center border-2 border-dashed rounded-xl bg-muted/20">
                         <div className="text-base sm:text-lg font-semibold text-muted-foreground">
-                            {instruments.length > 0 ? "No matching instruments found" : "No instruments found"}
+                            {instruments.length > 0 ? "No matching instruments found" : "No instruments in dashboard watchlists"}
                         </div>
                         <p className="text-xs sm:text-sm text-muted-foreground/80">
-                            {instruments.length > 0 ? "Try adjusting your search terms." : "Try selecting a different exchange or check back later."}
+                            {instruments.length > 0 ? "Try adjusting your search terms." : "Add instruments to your dashboard watchlists to see them here."}
                         </p>
                     </div>
                 )}

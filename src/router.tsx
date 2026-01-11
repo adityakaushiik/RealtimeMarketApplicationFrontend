@@ -58,6 +58,7 @@ import { UserSuggestionsPage } from "@/pages/UserSuggestionsPage";
 // Watchlist Components
 import { WatchlistPage } from "@/pages/WatchlistPage";
 import { WatchlistDetailPage } from "@/pages/WatchlistDetailPage";
+import { RecordingInstrumentsPage } from "@/pages/RecordingInstrumentsPage";
 import { UserRoles } from "./shared/utils/CommonConstants";
 
 const WS_URL = import.meta.env.VITE_WS_URL;
@@ -139,6 +140,10 @@ export const router = createBrowserRouter([
                     {
                         element: <RoleProtectedRoute allowedRoles={[UserRoles.ADMIN]} />,
                         children: [
+                            {
+                                path: "/recording-instruments",
+                                element: <RecordingInstrumentsPage />,
+                            },
                             {
                                 path: "/user-approval",
                                 element: <UserApprovalPage />,
