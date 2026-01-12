@@ -323,3 +323,26 @@ export interface SuggestionUpdate {
     description?: string | null;
     status?: string | null;
 }
+
+export interface SuggestionResponse {
+    suggestion_type_id: number;
+    title: string;
+    description: string;
+    id: number;
+    user_id: number;
+    status: string;
+    created_at: string;
+    updated_at: string;
+    is_active: boolean;
+    user: UserInDb;
+    suggestion_type: SuggestionTypeInDb;
+}
+
+export interface ChangePasswordRequest {
+    old_password: string;
+    new_password: string;
+}
+
+export interface ResetPasswordRequest {
+    new_password: string;
+}

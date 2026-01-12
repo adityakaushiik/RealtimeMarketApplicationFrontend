@@ -3,7 +3,7 @@ import { useDataStore, type MarketData } from '@/shared/services/dataService';
 import { WebSocketService, useWebSocketStore, type WebSocketState } from '@/shared/services/websocketService';
 import { useShallow } from 'zustand/react/shallow';
 import { WebSocketMessageType } from '@/shared/utils/CommonConstants';
-import { useAppStore } from '@/shared/store/appStore';
+import type { SnapshotWebsocketMessage } from '@/shared/utils/utils';
 
 interface InstrumentPriceDeferredProps {
     /**
@@ -69,8 +69,14 @@ const InstrumentPriceDeferred = ({
         useShallow((state: any) => state.data[symbol] as MarketData[] | undefined)
     );
 
-    const { previousCloseMap } = useAppStore();
-    const previousClose = previousCloseMap[symbol];
+    // Find the snapshot to get static data like prevClose
+    const snapshot = useMemo(() => {
+        if (!symbolDataArray) return undefined;
+        return symbolDataArray.find((d) => d.type === WebSocketMessageType.SNAPSHOT) as SnapshotWebsocketMessage | undefined;
+    }, [symbolDataArray]);
+
+    // Use prevClose from snapshot, or Open if prevClose is not available/zero (fallback logic)
+    const previousClose = snapshot?.prevClose || snapshot?.open;
 
     // Get the latest price from the array (memoized to prevent unnecessary recalculations)
     const latestData = useMemo(() => {
@@ -89,7 +95,8 @@ const InstrumentPriceDeferred = ({
     // Format price for display
     const formattedPrice = useMemo(() => {
         const price = getPrice(latestData);
-        if (price === undefined) return '--';
+        // If price is undefined or 0, showing it as 0 might be misleading if it means "no data"
+        if (price === undefined || price === 0) return '--';
         return price.toFixed(2);
     }, [latestData, previousClose]);
 
@@ -109,7 +116,14 @@ const InstrumentPriceDeferred = ({
 
     const changePercentage = useMemo(() => {
         const currentPrice = getPrice(latestData);
-        if (currentPrice === undefined || !previousClose) return undefined;
+
+        // Use prevClose from snapshot for calculation
+        // If prevClose is 0 or undefined, we cannot calculate change correctly based on it.
+        // User requested: "when market is off... use the ltp to calculate the percentage"
+        // This likely means if prevClose is bad, assume 0% or handle gracefully.
+        // With the fallback to 'open' above, we try to provide a meaningful change.
+        if (currentPrice === undefined || currentPrice === 0 || !previousClose || previousClose === 0) return undefined;
+
         return ((currentPrice - previousClose) / previousClose) * 100;
     }, [latestData, previousClose]);
 

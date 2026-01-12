@@ -3,6 +3,7 @@ import { Header } from "./components/Header";
 import { StockSearchPage } from "./pages/StockSearchPage";
 import { StockDetailPage } from "./pages/StockDetailPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { ProfilePage } from "./pages/ProfilePage";
 import { UserApprovalPage } from "./pages/UserApprovalPage";
 import { InactiveAccountPage } from "./pages/InactiveAccountPage";
 import { ConfigPage } from "./pages/ConfigPage";
@@ -115,6 +116,10 @@ export const router = createBrowserRouter([
                     {
                         path: "/dashboard",
                         element: <DashboardPage />,
+                    },
+                    {
+                        path: "/profile",
+                        element: <ProfilePage />,
                     },
                     {
                         path: "/stocks",

@@ -5,8 +5,18 @@ import type { UserInDb } from '@/shared/types/apiTypes';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Check, X, Ban, RefreshCw, UserCheck, ShieldAlert, Clock } from 'lucide-react';
+import { Check, X, Ban, RefreshCw, UserCheck, ShieldAlert, Clock, KeyRound } from 'lucide-react';
 import { UserStatus } from '@/shared/utils/CommonConstants';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export const UserApprovalPage = () => {
     const [pendingUsers, setPendingUsers] = useState<UserInDb[]>([]);
@@ -35,6 +45,32 @@ export const UserApprovalPage = () => {
     useEffect(() => {
         fetchUsers();
     }, []);
+
+    const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
+    const [selectedUserForReset, setSelectedUserForReset] = useState<UserInDb | null>(null);
+    const [newResetPassword, setNewResetPassword] = useState("");
+
+    const openResetPasswordDialog = (user: UserInDb) => {
+        setSelectedUserForReset(user);
+        setNewResetPassword("");
+        setResetPasswordOpen(true);
+    };
+
+    const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedUserForReset) return;
+
+        try {
+            await ApiService.resetPassword(selectedUserForReset.id, { new_password: newResetPassword });
+            alert(`Password for ${selectedUserForReset.username} has been reset successfully.`);
+            setResetPasswordOpen(false);
+            setNewResetPassword("");
+            setSelectedUserForReset(null);
+        } catch (error) {
+            console.error("Failed to reset password", error);
+            alert("Failed to reset password. Please try again.");
+        }
+    };
 
     const handleStatusUpdate = async (userId: number, newStatus: number) => {
         try {
@@ -114,12 +150,15 @@ export const UserApprovalPage = () => {
                                         <RefreshCw className="w-4 h-4 mr-1" /> <span className="hidden sm:inline">Reactivate</span>
                                     </Button>
                                 )}
+                                <Button size="sm" variant="outline" className="h-8" onClick={() => openResetPasswordDialog(user)}>
+                                    <KeyRound className="w-4 h-4 mr-1" /> <span className="hidden sm:inline">Reset Password</span>
+                                </Button>
                             </div>
                         </div>
                     </div>
                 ))
             )}
-        </div>
+        </div >
     );
 
     return (
@@ -168,6 +207,38 @@ export const UserApprovalPage = () => {
                     {renderUserList(inactiveUsers, 'inactive')}
                 </TabsContent>
             </Tabs>
+
+            <Dialog open={resetPasswordOpen} onOpenChange={setResetPasswordOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Reset Password</DialogTitle>
+                        <DialogDescription>
+                            Enter a new password for user <b>{selectedUserForReset?.username}</b>.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleResetPasswordSubmit}>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="new-password" className="text-right">
+                                    New Password
+                                </Label>
+                                <Input
+                                    id="new-password"
+                                    type="password"
+                                    value={newResetPassword}
+                                    onChange={(e) => setNewResetPassword(e.target.value)}
+                                    className="col-span-3"
+                                    required
+                                    minLength={6}
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button type="submit">Reset Password</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

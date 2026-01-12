@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { DataService } from "./dataService.ts";
 import { parseSnapshot, parseUpdate } from "../utils/utils";
+import { WebSocketMessageType } from "../utils/CommonConstants";
 
 
 export interface WebSocketState {
@@ -95,8 +96,32 @@ class WebSocketManager {
                             }
                         }
                     } else {
-                        // Handle JSON messages - just log them as requested
-                        // console.log("Received JSON message:", ev.data);
+                        // Handle JSON messages
+                        try {
+                            const messageStr = typeof ev.data === 'string' ? ev.data : await (ev.data as Blob).text();
+                            const json = JSON.parse(messageStr);
+
+                            if (json.message_type === WebSocketMessageType.SNAPSHOT) {
+                                // Map JSON fields to SnapshotWebsocketMessage
+                                const snapshot: any = {
+                                    type: WebSocketMessageType.SNAPSHOT,
+                                    symbol: json.symbol,
+                                    timestamp: Date.now(), // JSON might not have timestamp, usage varies
+                                    open: json.open || 0,
+                                    high: json.high || 0,
+                                    low: json.low || 0,
+                                    close: json.ltp || json.close || 0,
+                                    prevClose: json.prev_close || 0,
+                                    volume: json.volume || 0
+                                };
+                                DataService.saveData(snapshot.symbol, snapshot);
+                            } else if (json.message_type === WebSocketMessageType.UPDATE) {
+                                // Handle update if needed, though user only mentioned snapshot for now
+                                // Similar mapping would be needed
+                            }
+                        } catch (e) {
+                            console.error("Error parsing JSON WebSocket message:", e);
+                        }
                     }
                 } catch (err) {
                     console.error("Error processing WebSocket message:", err);

@@ -216,15 +216,21 @@ export function AppSidebar() {
                 <SidebarMenu>
                     {currentUser && (
                         <SidebarMenuItem>
-                            <div className="flex items-center gap-3 rounded-md bg-accent/20 p-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:p-0 transition-all">
-                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                                    <User className="h-4 w-4" />
-                                </div>
-                                <div className="flex flex-col gap-0.5 overflow-hidden group-data-[collapsible=icon]:hidden">
-                                    <span className="truncate text-sm font-medium">User</span>
-                                    <span className="truncate text-xs text-muted-foreground">{currentUser.email}</span>
-                                </div>
-                            </div>
+                            <SidebarMenuButton
+                                asChild
+                                tooltip="Profile"
+                                className="h-auto py-2 hover:bg-accent/50 group-data-[collapsible=icon]:py-1.5"
+                            >
+                                <Link to="/profile" className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
+                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary group-data-[collapsible=icon]:size-7">
+                                        <User className="h-4 w-4 group-data-[collapsible=icon]:size-3.5" />
+                                    </div>
+                                    <div className="flex flex-col gap-0.5 overflow-hidden group-data-[collapsible=icon]:hidden text-left">
+                                        <span className="truncate text-sm font-medium">{currentUser.username || 'User'}</span>
+                                        <span className="truncate text-xs text-muted-foreground">{currentUser.email}</span>
+                                    </div>
+                                </Link>
+                            </SidebarMenuButton>
                         </SidebarMenuItem>
                     )}
                 </SidebarMenu>

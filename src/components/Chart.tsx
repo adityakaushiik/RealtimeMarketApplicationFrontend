@@ -94,8 +94,8 @@ const Chart = ({ symbol }: ChartProps) => {
 
     const percentChange = useMemo(() => {
         if (currentPrice !== null && prevClose) {
-             const change = currentPrice - prevClose;
-             return (change / prevClose) * 100;
+            const change = currentPrice - prevClose;
+            return (change / prevClose) * 100;
         }
         return null;
     }, [currentPrice, prevClose]);
@@ -482,20 +482,101 @@ const Chart = ({ symbol }: ChartProps) => {
         setTimeframe(Number(value) as Timeframe);
     };
 
+    const [isMarketOpen, setIsMarketOpen] = useState(false);
+
+    // --- Market Status Check ---
+    useEffect(() => {
+        let intervalId: ReturnType<typeof setInterval>;
+
+        const checkMarketStatus = async () => {
+            try {
+                const instrument = await ApiService.getInstrumentBySymbol(symbol);
+                if (!instrument) return;
+
+                const exchange = await ApiService.getExchangeById(instrument.exchange_id);
+                if (!exchange || !exchange.timezone || !exchange.market_open_time || !exchange.market_close_time) {
+                    setIsMarketOpen(false);
+                    return;
+                }
+
+                const checkTime = () => {
+                    try {
+                        const now = new Date();
+
+                        // Parse Exchange Times
+                        // Assuming format "HH:MM:SS"
+                        const [openH, openM] = exchange.market_open_time!.split(':').map(Number);
+                        const [closeH, closeM] = exchange.market_close_time!.split(':').map(Number);
+
+                        // Get current time in Exchange Timezone
+                        const nowInExchangeStr = now.toLocaleTimeString('en-US', {
+                            timeZone: exchange.timezone!,
+                            hour12: false,
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        });
+                        const [nowH, nowM] = nowInExchangeStr.split(':').map(Number);
+
+                        // Create comparable numbers (minutes from midnight)
+                        const currentMinutes = nowH * 60 + nowM;
+                        const openMinutes = openH * 60 + openM;
+                        const closeMinutes = closeH * 60 + closeM;
+
+                        // Check if weekday (0=Sun, 6=Sat) - simplistic check, holidays not covered here yet
+                        const dayOfWeek = new Date(now.toLocaleString('en-US', { timeZone: exchange.timezone! })).getDay();
+                        const isWeekday = dayOfWeek !== 0 && dayOfWeek !== 6;
+
+                        if (isWeekday && currentMinutes >= openMinutes && currentMinutes < closeMinutes) {
+                            setIsMarketOpen(true);
+                        } else {
+                            setIsMarketOpen(false);
+                        }
+                    } catch (e) {
+                        console.error("Error checking market time:", e);
+                        setIsMarketOpen(false);
+                    }
+                };
+
+                checkTime();
+                // Re-check every minute
+                intervalId = setInterval(checkTime, 60000);
+
+            } catch (error) {
+                console.error("Failed to fetch market info:", error);
+                setIsMarketOpen(false);
+            }
+        };
+
+        checkMarketStatus();
+
+        return () => {
+            if (intervalId) clearInterval(intervalId);
+        };
+    }, [symbol]);
+
     return (
         <div className="w-full space-y-2">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div className="flex flex-col">
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-bold tracking-tight text-foreground">
-                            {currentPrice ? currentPrice.toFixed(2) : '--'}
-                        </span>
-                        {percentChange !== null && (
-                             <span className={`text-sm font-medium ${percentChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                {percentChange >= 0 ? '+' : ''}{percentChange.toFixed(2)}%
-                             </span>
+                    <div className="flex items-center gap-2">
+                        {isMarketOpen && (
+                            <Badge variant="outline" className="gap-1 font-normal text-[10px] sm:text-xs px-2 h-6 border-green-500/50 text-green-600 dark:text-green-400 bg-green-500/10">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                Live
+                            </Badge>
                         )}
-                        {isLoading && <span className="text-[10px] sm:text-xs text-muted-foreground animate-pulse ml-2">Loading...</span>}
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-2xl font-bold tracking-tight text-foreground">
+                                {currentPrice ? currentPrice.toFixed(2) : '--'}
+                            </span>
+                            {percentChange !== null && (
+                                <span className={`text-sm font-medium ${percentChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                    {percentChange >= 0 ? '+' : ''}{percentChange.toFixed(2)}%
+                                </span>
+                            )}
+                            {isLoading && <span className="text-[10px] sm:text-xs text-muted-foreground animate-pulse ml-2">Loading...</span>}
+                        </div>
                     </div>
                 </div>
 
@@ -533,19 +614,15 @@ const Chart = ({ symbol }: ChartProps) => {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-[10px] sm:text-xs text-muted-foreground">
-                <Badge variant="outline" className="gap-1 font-normal text-[10px] sm:text-xs">
-                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500 animate-pulse"></span>
-                    Live
-                </Badge>
                 <div>
                     Candles: <span className="font-medium text-foreground">{candleCount}</span>
                 </div>
                 <div className="hidden sm:block">
-                     <TooltipProvider>
+                    <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <div className="cursor-help flex items-center gap-1">
-                                    Last Updated: 
+                                    Last Updated:
                                     <span className="font-medium text-foreground">
                                         {lastUpdateTime ? lastUpdateTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false }) : '--:--'} IST
                                     </span>
@@ -553,11 +630,11 @@ const Chart = ({ symbol }: ChartProps) => {
                             </TooltipTrigger>
                             <TooltipContent>
                                 <p>
-                                    {lastUpdateTime ? lastUpdateTime.toLocaleString('en-IN', { 
-                                        timeZone: 'Asia/Kolkata', 
+                                    {lastUpdateTime ? lastUpdateTime.toLocaleString('en-IN', {
+                                        timeZone: 'Asia/Kolkata',
                                         day: '2-digit', month: 'short', year: 'numeric',
-                                        hour: '2-digit', minute: '2-digit', second: '2-digit', 
-                                        hour12: false 
+                                        hour: '2-digit', minute: '2-digit', second: '2-digit',
+                                        hour12: false
                                     }) : ''} IST
                                 </p>
                             </TooltipContent>

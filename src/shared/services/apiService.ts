@@ -12,7 +12,8 @@ import type {
     WatchlistItemCreate, WatchlistItemInDb,
     ExchangeProviderMappingCreate, ExchangeProviderMappingInDb, ExchangeProviderMappingUpdate,
     SuggestionTypeCreate, SuggestionTypeInDb, SuggestionTypeUpdate,
-    SuggestionCreate, SuggestionInDb, SuggestionUpdate
+    SuggestionCreate, SuggestionInDb, SuggestionUpdate, SuggestionResponse,
+    ChangePasswordRequest, ResetPasswordRequest
 } from '../types/apiTypes';
 
 import NProgress from 'nprogress';
@@ -65,7 +66,9 @@ export class ApiService {
                 },
             });
 
-            if (response.status === 401) {
+            // Handle Unauthorized (401)
+            // Skip global logout/redirect for login endpoint to allow form to handle specific error (e.g. "Invalid credentials")
+            if (response.status === 401 && !url.includes('/auth/login')) {
                 this.logout();
                 window.location.href = '/login';
                 throw new Error('Unauthorized');
@@ -73,7 +76,20 @@ export class ApiService {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.detail ? JSON.stringify(errorData.detail) : 'API request failed');
+                let errorMessage = 'API request failed';
+
+                if (errorData.detail) {
+                    if (typeof errorData.detail === 'string') {
+                        errorMessage = errorData.detail;
+                    } else if (Array.isArray(errorData.detail)) {
+                        // FastAPI validation error often comes as an array of objects
+                        errorMessage = errorData.detail.map((err: any) => err.msg || JSON.stringify(err)).join(', ');
+                    } else {
+                        errorMessage = JSON.stringify(errorData.detail);
+                    }
+                }
+
+                throw new Error(errorMessage);
             }
 
             return response.json();
@@ -192,6 +208,20 @@ export class ApiService {
     static async updateUserStatus(id: number, status: number): Promise<UserInDb> {
         return this.request<UserInDb>(`/user/update_status/${id}?user_status=${status}`, {
             method: 'PATCH',
+        });
+    }
+
+    static async changePassword(data: ChangePasswordRequest): Promise<void> {
+        return this.request<void>('/user/change-password', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    static async resetPassword(userId: number, data: ResetPasswordRequest): Promise<void> {
+        return this.request<void>(`/user/${userId}/reset-password`, {
+            method: 'POST',
+            body: JSON.stringify(data),
         });
     }
 
@@ -594,12 +624,12 @@ export class ApiService {
     }
 
     // Suggestions
-    static async getSuggestions(): Promise<SuggestionInDb[]> {
-        return this.request<SuggestionInDb[]>('/suggestions/');
+    static async getSuggestions(): Promise<SuggestionResponse[]> {
+        return this.request<SuggestionResponse[]>('/suggestions/');
     }
 
-    static async getMySuggestions(): Promise<SuggestionInDb[]> {
-        return this.request<SuggestionInDb[]>('/suggestions/my');
+    static async getMySuggestions(): Promise<SuggestionResponse[]> {
+        return this.request<SuggestionResponse[]>('/suggestions/my');
     }
 
     static async createSuggestion(data: SuggestionCreate): Promise<SuggestionInDb> {
