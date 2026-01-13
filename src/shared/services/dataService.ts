@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import type { SnapshotWebsocketMessage, UpdateWebsocketMessage } from '../utils/utils';
 
 export type MarketData = SnapshotWebsocketMessage | UpdateWebsocketMessage;
@@ -14,84 +13,59 @@ interface DataState {
 
 export const useDataStore = create<DataState>()(
 
-    persist(
+    (set, get) => ({
 
-        (set, get) => ({
+        data: {},
 
-            data: {},
+        saveData: (key: string, value: MarketData) => {
+            set((state) => {
+                const existingData = state.data[key];
 
-            saveData: (key: string, value: MarketData) => {
-                set((state) => {
-                    const existingData = state.data[key];
-
-                    // Handle migration: if existingData is not an array (old format), start fresh with new array
-                    let dataArray: MarketData[];
-                    if (!existingData) {
-                        // No data yet, create new array
-                        dataArray = [];
-                    } else if (Array.isArray(existingData)) {
-                        // Already an array (new format), use it
-                        dataArray = existingData;
-                    } else {
-                        // Old format (single object), convert to array with that single item
-                        console.warn(`Migrating old data format for ${key} - converting single object to array`);
-                        dataArray = [existingData as MarketData];
-                    }
-
-                    // Append new tick to the array
-                    return {
-                        data: { ...state.data, [key]: [...dataArray, value] },
-                    };
-                });
-            },
-
-            getData: (key: string): MarketData[] => {
-                return get().data[key] || [];
-            },
-
-            clearData: (key: string) => {
-                set((state) => {
-                    const newData = { ...state.data };
-                    delete newData[key];
-                    return { data: newData };
-                });
-            },
-
-            clearAllData: () => {
-                set({ data: {} });
-            },
-
-        }),
-        {
-            name: 'data-storage',
-            version: 2, // Increment version to force migration from old format
-            migrate: (persistedState: any, version: number) => {
-                // If migrating from version 0 or 1 (old format with single objects)
-                if (version < 2) {
-                    console.log('🔄 Migrating data storage from v' + version + ' to v2 (array format)');
-                    const oldState = persistedState as { data: Record<string, unknown> };
-                    const newData: Record<string, MarketData[]> = {};
-
-                    // Convert each symbol's data to an array
-                    Object.entries(oldState.data || {}).forEach(([key, value]) => {
-                        if (value && typeof value === 'object') {
-                            // If it's already an array, keep it
-                            if (Array.isArray(value)) {
-                                newData[key] = value as MarketData[];
-                            } else {
-                                // Convert single object to array with one item
-                                newData[key] = [value as MarketData];
-                            }
-                        }
-                    });
-
-                    console.log(`✅ Migration complete - converted ${Object.keys(newData).length} symbols`);
-                    return { ...oldState, data: newData };
+                // Handle migration: if existingData is not an array (old format), start fresh with new array
+                let dataArray: MarketData[];
+                if (!existingData) {
+                    // No data yet, create new array
+                    dataArray = [];
+                } else if (Array.isArray(existingData)) {
+                    // Already an array (new format), use it
+                    dataArray = existingData;
+                } else {
+                    // Old format (single object), convert to array with that single item
+                    console.warn(`Migrating old data format for ${key} - converting single object to array`);
+                    dataArray = [existingData as MarketData];
                 }
-                return persistedState;
-            },
-        }
-    )
+
+                // Append new tick to the array
+                // Limit to last 5000 ticks to prevent memory leaks in long sessions
+                const MAX_TICKS = 5000;
+                let newDataArray = [...dataArray, value];
+                if (newDataArray.length > MAX_TICKS) {
+                    newDataArray = newDataArray.slice(newDataArray.length - MAX_TICKS);
+                }
+
+                return {
+                    data: { ...state.data, [key]: newDataArray },
+                };
+            });
+        },
+
+        getData: (key: string): MarketData[] => {
+            return get().data[key] || [];
+        },
+
+        clearData: (key: string) => {
+            set((state) => {
+                const newData = { ...state.data };
+                delete newData[key];
+                return { data: newData };
+            });
+        },
+
+        clearAllData: () => {
+            set({ data: {} });
+        },
+
+    })
 );
 
 // Service class wrapper for easier usage

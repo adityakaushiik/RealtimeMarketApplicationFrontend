@@ -34,15 +34,21 @@ type Timeframe = typeof TIMEFRAMES[keyof typeof TIMEFRAMES];
  * Helper to extract price from MarketData
  */
 const getPrice = (data: MarketData): number | undefined => {
+    let price: number | undefined;
     if (data.type === WebSocketMessageType.UPDATE) {
-        return (data as any).price;
+        price = (data as any).price;
+    } else if (data.type === WebSocketMessageType.SNAPSHOT) {
+        price = (data as any).close;
+    } else {
+        // Fallback for legacy or incomplete data
+        if ('price' in data) price = (data as any).price;
+        else if ('close' in data) price = (data as any).close;
     }
-    if (data.type === WebSocketMessageType.SNAPSHOT) {
-        return (data as any).close;
+
+    // Filter out invalid prices (backend sends -1 for unavailable data)
+    if (price !== undefined && price !== -1) {
+        return price;
     }
-    // Fallback for legacy or incomplete data
-    if ('price' in data) return (data as any).price;
-    if ('close' in data) return (data as any).close;
     return undefined;
 };
 
@@ -82,11 +88,14 @@ const Chart = ({ symbol }: ChartProps) => {
 
     const prevClose = useMemo(() => {
         if (!symbolDataArray) return undefined;
-        // Find latest snapshot with prevClose
+        // Find latest snapshot with valid prevClose
         for (let i = symbolDataArray.length - 1; i >= 0; i--) {
             const msg = symbolDataArray[i];
             if (msg.type === WebSocketMessageType.SNAPSHOT && 'prevClose' in msg) {
-                return (msg as any).prevClose;
+                const val = (msg as any).prevClose;
+                if (val !== undefined && val !== -1) {
+                    return val;
+                }
             }
         }
         return undefined;

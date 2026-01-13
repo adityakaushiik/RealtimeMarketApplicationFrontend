@@ -393,10 +393,7 @@ export class ApiService {
     }
 
 
-    static async getPreviousCloseForExchange(exchange: string): Promise<any> {
-        console.log(`Fetching previous close for exchange: ${exchange}`);
-        return this.getCached(`/marketdata/prev_close/${exchange}`, true);
-    }
+
 
 
     static async getSectorList(): Promise<SectorInDb[]> {
@@ -581,8 +578,8 @@ export class ApiService {
     }
 
     static async setWatchlistShowOnDashboard(watchlistId: number, showOnDashboard: boolean): Promise<WatchlistInDb> {
-        const response = await this.request<WatchlistInDb>(`/watchlist/${watchlistId}/show-on-dashboard?show_on_dashboard=${showOnDashboard}`, {
-            method: 'PATCH',
+        const response = await this.request<WatchlistInDb>(`/watchlist/show_on_dashboard/${watchlistId}?show_on_dashboard=${showOnDashboard}`, {
+            method: 'PUT',
         });
         this.invalidateCache('/watchlist/');
         this.invalidateCache('/watchlist/dashboard');

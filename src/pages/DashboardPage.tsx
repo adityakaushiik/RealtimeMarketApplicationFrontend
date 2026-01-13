@@ -17,7 +17,7 @@ export const DashboardPage = () => {
     const [currentExchange, setCurrentExchange] = useState<ExchangeInDb | null>(null);
     const [instrumentTypes, setInstrumentTypes] = useState<InstrumentTypeInDb[]>([]);
     const [sectors, setSectors] = useState<SectorInDb[]>([]);
-    const { selectedExchange, setPreviousCloseMap } = useAppStore();
+    const { selectedExchange } = useAppStore();
     const navigate = useNavigate();
     const [, setTick] = useState(0); // For forcing re-render to update market status
     const [searchQuery, setSearchQuery] = useState("");
@@ -111,36 +111,7 @@ export const DashboardPage = () => {
         };
         fetchTypesAndSectors();
 
-        const fetchPreviousClose = async () => {
-            if (!selectedExchange) return;
-            try {
-                const data: {
-                    exchange_code: string;
-                    data: {
-                        symbol: string;
-                        price: number;
-                        timestamp: string;
-                    }[]
-                } = await ApiService.getPreviousCloseForExchange(selectedExchange);
-
-                console.log("Previous close data received:", data);
-
-                const previousCloseData = data.data.reduce((acc, item) => {
-                    if (item.price != null) {
-                        acc[item.symbol] = item.price;
-                    }
-                    return acc;
-                }, {} as Record<string, number>);
-
-                console.log("Previous close map:", previousCloseData);
-                setPreviousCloseMap(previousCloseData);
-            } catch (error) {
-                console.error("Failed to fetch previous close:", error);
-            }
-        };
-        fetchPreviousClose();
-
-    }, [selectedExchange, setPreviousCloseMap]);
+    }, [selectedExchange]);
 
     const typeMap = instrumentTypes.reduce((acc, type) => {
         acc[type.id] = type.name;

@@ -14,7 +14,7 @@ export const useAppStore = create<AppState>()(
             selectedExchange: null,
             setSelectedExchange: (exchange) => set({ selectedExchange: exchange }),
             previousCloseMap: {},
-            setPreviousCloseMap: (data) => set({ previousCloseMap: data }),
+            setPreviousCloseMap: (data) => set((state) => ({ previousCloseMap: { ...state.previousCloseMap, ...data } })),
         }),
         {
             name: 'app-storage',

@@ -75,8 +75,9 @@ const InstrumentPriceDeferred = ({
         return symbolDataArray.find((d) => d.type === WebSocketMessageType.SNAPSHOT) as SnapshotWebsocketMessage | undefined;
     }, [symbolDataArray]);
 
-    // Use prevClose from snapshot, or Open if prevClose is not available/zero (fallback logic)
-    const previousClose = snapshot?.prevClose || snapshot?.open;
+    // Use prevClose from snapshot, or Open if prevClose is not available/zero/-1 (fallback logic)
+    const validPrevClose = (snapshot?.prevClose !== undefined && snapshot?.prevClose !== 0 && snapshot?.prevClose !== -1) ? snapshot.prevClose : undefined;
+    const previousClose = validPrevClose || snapshot?.open;
 
     // Get the latest price from the array (memoized to prevent unnecessary recalculations)
     const latestData = useMemo(() => {
@@ -86,15 +87,27 @@ const InstrumentPriceDeferred = ({
 
     // Helper to extract price from MarketData
     const getPrice = (data: MarketData | undefined): number | undefined => {
-        if (!data) return previousClose;
-        if ('price' in data) return data.price;
-        if ('close' in data) return data.close;
-        return previousClose;
+        if (!data) return undefined; // distinct from previousClose fallback
+        const d = data as any;
+        let p: number | undefined;
+        if (d.price !== undefined && d.price !== null) p = d.price;
+        else if (d.close !== undefined && d.close !== null) p = d.close;
+        
+        // Filter out -1 (unavailable)
+        if (p !== undefined && p !== -1) return p;
+        return undefined;
     };
 
     // Format price for display
     const formattedPrice = useMemo(() => {
-        const price = getPrice(latestData);
+        let price = getPrice(latestData);
+
+        // Fallback to previousClose only if we have NO data at all? 
+        // Or if latestData yielded no price.
+        if (price === undefined && previousClose !== undefined && previousClose !== 0) {
+            price = previousClose;
+        }
+
         // If price is undefined or 0, showing it as 0 might be misleading if it means "no data"
         if (price === undefined || price === 0) return '--';
         return price.toFixed(2);
@@ -115,6 +128,9 @@ const InstrumentPriceDeferred = ({
     }, [symbolDataArray]);
 
     const changePercentage = useMemo(() => {
+        // If prevClose was explicitly -1, do not show percentage
+        if (snapshot?.prevClose === -1) return undefined;
+
         const currentPrice = getPrice(latestData);
 
         // Use prevClose from snapshot for calculation
@@ -125,7 +141,7 @@ const InstrumentPriceDeferred = ({
         if (currentPrice === undefined || currentPrice === 0 || !previousClose || previousClose === 0) return undefined;
 
         return ((currentPrice - previousClose) / previousClose) * 100;
-    }, [latestData, previousClose]);
+    }, [latestData, previousClose, snapshot]);
 
     const formattedChange = useMemo(() => {
         if (changePercentage === undefined) return '';

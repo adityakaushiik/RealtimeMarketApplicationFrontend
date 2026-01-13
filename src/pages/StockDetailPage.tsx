@@ -6,7 +6,6 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import Chart from "@/components/Chart";
-import { useWebSocketStore } from "@/shared/services/websocketService";
 import { useEffect, useState } from 'react';
 import { ApiService } from "@/shared/services/apiService";
 import type { InstrumentInDb, ProviderInstrumentMappingInDb } from "@/shared/types/apiTypes";
@@ -34,7 +33,6 @@ import { AddToWatchlistDialog } from "@/components/AddToWatchlistDialog";
 
 export function StockDetailPage() {
     const { symbol } = useParams<{ symbol: string }>();
-    const { isConnected } = useWebSocketStore();
     const [instrument, setInstrument] = useState<InstrumentInDb | null>(null);
     const [mappings, setMappings] = useState<ProviderInstrumentMappingInDb[]>([]);
     const [openDialog, setOpenDialog] = useState<'create' | 'update' | 'update_instrument' | 'delete_instrument' | null>(null);
@@ -45,12 +43,6 @@ export function StockDetailPage() {
     const user = ApiService.getCurrentUser();
     // Assuming role_id 1 is Admin.
     const isAdmin = user?.role_id === 1;
-
-    useEffect(() => {
-        if (isConnected && symbol) {
-            useWebSocketStore.getState().sendMessage({ message_type: 1, channel: symbol });
-        }
-    }, [isConnected, symbol]);
 
     useEffect(() => {
         const fetchInstrumentDetails = async () => {
