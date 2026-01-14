@@ -4,6 +4,7 @@ import { WebSocketService, useWebSocketStore, type WebSocketState } from '@/shar
 import { useShallow } from 'zustand/react/shallow';
 import { WebSocketMessageType } from '@/shared/utils/CommonConstants';
 import type { SnapshotWebsocketMessage } from '@/shared/utils/utils';
+import { useAppStore } from '@/shared/store/appStore';
 
 interface InstrumentPriceDeferredProps {
     /**
@@ -64,6 +65,8 @@ const InstrumentPriceDeferred = ({
     // Track subscription state
     const isSubscribedRef = useRef(false);
 
+    const pctChangeBasis = useAppStore(useShallow((state) => state.pctChangeBasis));
+
     // Subscribe to the specific symbol's data array using shallow comparison
     const symbolDataArray = useDataStore(
         useShallow((state: any) => state.data[symbol] as MarketData[] | undefined)
@@ -76,8 +79,23 @@ const InstrumentPriceDeferred = ({
     }, [symbolDataArray]);
 
     // Use prevClose from snapshot, or Open if prevClose is not available/zero/-1 (fallback logic)
-    const validPrevClose = (snapshot?.prevClose !== undefined && snapshot?.prevClose !== 0 && snapshot?.prevClose !== -1) ? snapshot.prevClose : undefined;
-    const previousClose = validPrevClose || snapshot?.open;
+    // Adjusted logic to respect pctChangeBasis user preference
+    const previousClose = useMemo(() => {
+        if (!snapshot) return undefined;
+
+        if (pctChangeBasis === 'open') {
+            if (snapshot.open !== undefined && snapshot.open !== 0 && snapshot.open !== -1) {
+                return snapshot.open;
+            }
+            // If open is invalid, maybe fallback to prevClose to show something?
+            // For now, let's respect the user's choice strictly for the basis.
+            return undefined;
+        }
+
+        // Default: prev_close
+        const validPrevClose = (snapshot.prevClose !== undefined && snapshot.prevClose !== 0 && snapshot.prevClose !== -1) ? snapshot.prevClose : undefined;
+        return validPrevClose || snapshot.open;
+    }, [snapshot, pctChangeBasis]);
 
     // Get the latest price from the array (memoized to prevent unnecessary recalculations)
     const latestData = useMemo(() => {
@@ -128,8 +146,8 @@ const InstrumentPriceDeferred = ({
     }, [symbolDataArray]);
 
     const changePercentage = useMemo(() => {
-        // If prevClose was explicitly -1, do not show percentage
-        if (snapshot?.prevClose === -1) return undefined;
+        // If prevClose was explicitly -1, do not show percentage (only if using prev_close)
+        if (pctChangeBasis === 'prev_close' && snapshot?.prevClose === -1) return undefined;
 
         const currentPrice = getPrice(latestData);
 
@@ -141,7 +159,7 @@ const InstrumentPriceDeferred = ({
         if (currentPrice === undefined || currentPrice === 0 || !previousClose || previousClose === 0) return undefined;
 
         return ((currentPrice - previousClose) / previousClose) * 100;
-    }, [latestData, previousClose, snapshot]);
+    }, [latestData, previousClose, snapshot, pctChangeBasis]);
 
     const formattedChange = useMemo(() => {
         if (changePercentage === undefined) return '';

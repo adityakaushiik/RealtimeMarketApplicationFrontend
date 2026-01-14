@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { useAppStore } from "@/shared/store/appStore";
 import type { UserInDb } from "@/shared/types/apiTypes";
 // Checking UserSuggestionsPage, it doesn't show toast usage. UserApprovalPage doesn't either.
 // I'll stick to a simple alert or console.log if I can't find a toast provider, 
@@ -19,6 +21,7 @@ export function ProfilePage() {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const { pctChangeBasis, setPctChangeBasis } = useAppStore();
 
     useEffect(() => {
         const currentUser = ApiService.getCurrentUser();
@@ -143,6 +146,32 @@ export function ProfilePage() {
                             </Button>
                         </CardFooter>
                     </form>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Preferences</CardTitle>
+                        <CardDescription>Customize your application experience.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between space-x-2">
+                            <Label htmlFor="pct-basis" className="flex flex-col space-y-1">
+                                <span>Percentage Change Basis</span>
+                                <span className="font-normal text-xs text-muted-foreground">
+                                    Calculate price change based on {pctChangeBasis === 'prev_close' ? 'Previous Close' : 'Opening Price'}
+                                </span>
+                            </Label>
+                            <div className="flex items-center space-x-2">
+                                <span className={pctChangeBasis === 'open' ? "font-bold" : "text-muted-foreground"}>Open</span>
+                                <Switch
+                                    id="pct-basis"
+                                    checked={pctChangeBasis === 'prev_close'}
+                                    onCheckedChange={(checked) => setPctChangeBasis(checked ? 'prev_close' : 'open')}
+                                />
+                                <span className={pctChangeBasis === 'prev_close' ? "font-bold" : "text-muted-foreground"}>Prev Close</span>
+                            </div>
+                        </div>
+                    </CardContent>
                 </Card>
             </div>
         </div>
