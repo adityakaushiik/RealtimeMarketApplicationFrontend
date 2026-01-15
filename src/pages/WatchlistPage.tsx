@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { ApiService } from "@/shared/services/apiService";
-import type { WatchlistInDb } from "@/shared/types/apiTypes";
+import type { WatchlistInDb, ExchangeInDb } from "@/shared/types/apiTypes";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Plus, ArrowRight, Pin } from "lucide-react";
+import { Plus, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { WatchlistCreateComponent } from "@/crud_utils/watchlist/WatchlistCreate";
+import { Badge } from "@/components/ui/badge";
 import {
     Dialog,
     DialogContent,
@@ -17,9 +18,16 @@ import {
 
 export function WatchlistPage() {
     const [watchlists, setWatchlists] = useState<WatchlistInDb[]>([]);
+    const [exchanges, setExchanges] = useState<ExchangeInDb[]>([]);
     const [loading, setLoading] = useState(true);
     const [dialogOpen, setDialogOpen] = useState(false);
     const navigate = useNavigate();
+
+    // Create a map for quick lookup
+    const exchangeMap = exchanges.reduce((acc, ex) => {
+        acc[ex.id] = ex;
+        return acc;
+    }, {} as Record<number, ExchangeInDb>);
 
     const fetchWatchlists = async () => {
         setLoading(true);
@@ -35,6 +43,8 @@ export function WatchlistPage() {
 
     useEffect(() => {
         fetchWatchlists();
+        // Fetch exchanges (uses cache)
+        ApiService.getExchanges().then(setExchanges).catch(console.error);
     }, []);
 
     return (
@@ -58,7 +68,7 @@ export function WatchlistPage() {
                         <DialogHeader>
                             <DialogTitle>Create New Watchlist</DialogTitle>
                             <DialogDescription>
-                                Give your new watchlist a name.
+                                Give your new watchlist a name and select an exchange.
                             </DialogDescription>
                         </DialogHeader>
                         <WatchlistCreateComponent onCreated={() => {
@@ -86,7 +96,15 @@ export function WatchlistPage() {
                             className="group relative cursor-pointer hover:shadow-lg transition-all duration-300 border-border/50 bg-card/50 backdrop-blur"
                             onClick={() => navigate(`/watchlist/${watchlist.id}`)}
                         >
-                            {/* Pin Badge for Dashboard Watchlists */}
+                            {/* Exchange Badge */}
+                            {exchangeMap[watchlist.exchange_id] && (
+                                <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+                                    <Badge variant="outline" className="text-[10px] sm:text-xs font-semibold bg-secondary/50 border-border/50">
+                                        {exchangeMap[watchlist.exchange_id].code}
+                                    </Badge>
+                                </div>
+                            )}
+                            {/* Pin Badge for Dashboard Watchlists - Commented out
                             {watchlist.show_on_dashboard && (
                                 <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
                                     <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary text-[10px] sm:text-xs font-medium">
@@ -95,6 +113,7 @@ export function WatchlistPage() {
                                     </div>
                                 </div>
                             )}
+                            */}
                             <CardHeader className="p-4 sm:p-6">
                                 <CardTitle className="flex justify-between items-center text-base sm:text-lg pr-16 sm:pr-20">
                                     <span className="truncate">{watchlist.name}</span>

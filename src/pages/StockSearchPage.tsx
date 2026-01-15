@@ -10,8 +10,9 @@ import { Command as CommandPrimitive } from "cmdk"
 import { useNavigate } from "react-router-dom"
 import { Search, TrendingUp, BarChart2, ArrowRight } from "lucide-react"
 import { ApiService } from "@/shared/services/apiService";
-import type { InstrumentInDb } from "@/shared/types/apiTypes";
+import type { InstrumentInDb, ExchangeInDb } from "@/shared/types/apiTypes";
 import { Badge } from "@/components/ui/badge";
+import { useAppStore } from "@/shared/store/appStore";
 
 export function StockSearchPage() {
     const navigate = useNavigate()
@@ -19,6 +20,19 @@ export function StockSearchPage() {
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [isFocused, setIsFocused] = useState(false);
+    const { selectedExchange } = useAppStore();
+    const [exchanges, setExchanges] = useState<ExchangeInDb[]>([]);
+
+    // Fetch exchanges once on mount (uses cache)
+    useEffect(() => {
+        ApiService.getExchanges().then(setExchanges).catch(console.error);
+    }, []);
+
+    // Create a map for quick lookup
+    const exchangeMap = exchanges.reduce((acc, ex) => {
+        acc[ex.id] = ex;
+        return acc;
+    }, {} as Record<number, ExchangeInDb>);
 
     useEffect(() => {
         const fetchInstruments = async () => {
@@ -29,7 +43,7 @@ export function StockSearchPage() {
 
             setLoading(true);
             try {
-                const data = await ApiService.searchInstruments(searchQuery);
+                const data = await ApiService.searchInstruments(searchQuery, selectedExchange || undefined);
                 if (Array.isArray(data)) {
                     setInstruments(data);
                 } else {
@@ -48,7 +62,7 @@ export function StockSearchPage() {
         }, 300); // 300ms debounce
 
         return () => clearTimeout(timeoutId);
-    }, [searchQuery]);
+    }, [searchQuery, selectedExchange]);
 
     return (
         <div className="relative min-h-[calc(100vh-4rem)] flex flex-col items-center justify-start pt-10 sm:pt-16 lg:pt-20 overflow-hidden bg-background/50 px-4 sm:px-6">
@@ -131,7 +145,11 @@ export function StockSearchPage() {
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors shrink-0">
-                                                    {/* We could display exchange here if available */}
+                                                    {exchangeMap[instrument.exchange_id] && (
+                                                        <Badge variant="outline" className="text-[10px] sm:text-xs font-semibold bg-secondary/50 border-border/50">
+                                                            {exchangeMap[instrument.exchange_id].code}
+                                                        </Badge>
+                                                    )}
                                                     <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0 duration-300" />
                                                 </div>
                                             </CommandItem>

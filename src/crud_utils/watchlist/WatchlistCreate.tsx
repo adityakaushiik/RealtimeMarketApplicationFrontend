@@ -1,17 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ApiService } from '../../shared/services/apiService';
+import type { ExchangeInDb } from '../../shared/types/apiTypes';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
-import { Switch } from '../../components/ui/switch';
-import { Pin } from 'lucide-react';
+// import { Switch } from '../../components/ui/switch';
+// import { Pin } from 'lucide-react';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "../../components/ui/select";
 
 export function WatchlistCreateComponent({ onCreated }: { onCreated?: () => void }) {
     const [name, setName] = useState('');
-    const [showOnDashboard, setShowOnDashboard] = useState(false);
+    const [exchangeId, setExchangeId] = useState<string>('');
+    const [exchanges, setExchanges] = useState<ExchangeInDb[]>([]);
+    // const [showOnDashboard, setShowOnDashboard] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+
+    useEffect(() => {
+        // Fetch exchanges on mount (uses cache)
+        ApiService.getExchanges().then(setExchanges).catch(console.error);
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -25,11 +40,22 @@ export function WatchlistCreateComponent({ onCreated }: { onCreated?: () => void
             return;
         }
 
+        if (!exchangeId) {
+            setError('Exchange is required');
+            setLoading(false);
+            return;
+        }
+
         try {
-            await ApiService.createWatchlist({ name, show_on_dashboard: showOnDashboard });
+            await ApiService.createWatchlist({
+                name,
+                exchange_id: parseInt(exchangeId),
+                show_on_dashboard: true // Explicitly send true to satisfy backend
+            });
             setSuccess(true);
             setName('');
-            setShowOnDashboard(false);
+            setExchangeId('');
+            // setShowOnDashboard(false);
             if (onCreated) onCreated();
         } catch (err: any) {
             setError(err.message || 'Failed to create watchlist');
@@ -51,6 +77,23 @@ export function WatchlistCreateComponent({ onCreated }: { onCreated?: () => void
                 />
             </div>
 
+            <div className="space-y-2">
+                <Label htmlFor="watchlist-exchange">Exchange *</Label>
+                <Select value={exchangeId} onValueChange={setExchangeId}>
+                    <SelectTrigger id="watchlist-exchange">
+                        <SelectValue placeholder="Select an exchange" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {exchanges.map((ex) => (
+                            <SelectItem key={ex.id} value={ex.id.toString()}>
+                                {ex.name} ({ex.code})
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+
+            {/* Show on Dashboard - Commented out
             <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
                 <div className="flex items-center gap-2">
                     <Pin className="h-4 w-4 text-muted-foreground" />
@@ -69,11 +112,12 @@ export function WatchlistCreateComponent({ onCreated }: { onCreated?: () => void
                     onCheckedChange={setShowOnDashboard}
                 />
             </div>
+            */}
 
             {error && <p className="text-sm text-red-500">{error}</p>}
             {success && <p className="text-sm text-green-500">Watchlist created successfully!</p>}
 
-            <Button type="submit" disabled={loading} className="w-full">
+            <Button type="submit" disabled={loading || !exchangeId} className="w-full">
                 {loading ? 'Creating...' : 'Create Watchlist'}
             </Button>
         </form>

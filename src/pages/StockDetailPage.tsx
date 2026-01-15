@@ -1,14 +1,8 @@
 import { useParams } from "react-router-dom";
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
 import Chart from "@/components/Chart";
 import { useEffect, useState } from 'react';
 import { ApiService } from "@/shared/services/apiService";
-import type { InstrumentInDb, ProviderInstrumentMappingInDb } from "@/shared/types/apiTypes";
+import type { InstrumentInDb /*, ProviderInstrumentMappingInDb */ } from "@/shared/types/apiTypes";
 import { Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,7 +28,7 @@ import { AddToWatchlistDialog } from "@/components/AddToWatchlistDialog";
 export function StockDetailPage() {
     const { symbol } = useParams<{ symbol: string }>();
     const [instrument, setInstrument] = useState<InstrumentInDb | null>(null);
-    const [mappings, setMappings] = useState<ProviderInstrumentMappingInDb[]>([]);
+    // const [mappings, setMappings] = useState<ProviderInstrumentMappingInDb[]>([]); // Commented out
     const [openDialog, setOpenDialog] = useState<'create' | 'update' | 'update_instrument' | 'delete_instrument' | null>(null);
     const [confirmRecordingToggle, setConfirmRecordingToggle] = useState(false);
 
@@ -53,8 +47,8 @@ export function StockDetailPage() {
                 if (found) {
                     setInstrument(found);
                     try {
-                        const m = await ApiService.getInstrumentProviderMappings(found.id);
-                        setMappings(m);
+                        // const m = await ApiService.getInstrumentProviderMappings(found.id);
+                        // setMappings(m);
                     } catch (e) {
                         console.error("Failed to fetch mappings", e);
                     }
@@ -88,7 +82,7 @@ export function StockDetailPage() {
                 </div>
                 <div className="flex items-center gap-2">
                     {instrument && (
-                        <AddToWatchlistDialog instrumentId={instrument.id} symbol={instrument.symbol} />
+                        <AddToWatchlistDialog instrumentId={instrument.id} symbol={instrument.symbol} exchangeId={instrument.exchange_id} />
                     )}
                     {isAdmin && instrument && (
                         <>
@@ -125,7 +119,7 @@ export function StockDetailPage() {
                                     <CreateProviderInstrumentMapping
                                         instrumentId={instrument.id}
                                         onSuccess={() => {
-                                            ApiService.getInstrumentProviderMappings(instrument.id).then(setMappings);
+                                            // ApiService.getInstrumentProviderMappings(instrument.id).then(setMappings);
                                             setOpenDialog(null);
                                         }}
                                     />
@@ -140,7 +134,7 @@ export function StockDetailPage() {
                                     <UpdateProviderInstrumentMapping
                                         instrumentId={instrument.id}
                                         onSuccess={() => {
-                                            ApiService.getInstrumentProviderMappings(instrument.id).then(setMappings);
+                                            // ApiService.getInstrumentProviderMappings(instrument.id).then(setMappings);
                                             setOpenDialog(null);
                                         }}
                                     />

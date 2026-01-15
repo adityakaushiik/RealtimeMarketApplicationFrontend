@@ -226,10 +226,17 @@ export class ApiService {
     }
 
     // Instruments
-    static async getInstruments(exchange: string, instrumentTypeId?: number): Promise<any> {
+    static async getInstruments(exchange: string, instrumentTypeId?: number, recordingOnly?: boolean): Promise<any> {
         let url = `/instrument/list/${exchange}`;
+        const params: string[] = [];
         if (instrumentTypeId) {
-            url += `?instrument_type_id=${instrumentTypeId}`;
+            params.push(`instrument_type_id=${instrumentTypeId}`);
+        }
+        if (recordingOnly) {
+            params.push(`recording_only=true`);
+        }
+        if (params.length > 0) {
+            url += `?${params.join('&')}`;
         }
         return this.getCached(url);
     }
@@ -309,8 +316,12 @@ export class ApiService {
         });
     }
 
-    static async searchInstruments(query: string): Promise<InstrumentInDb[]> {
-        return this.request<InstrumentInDb[]>(`/instrument/search?query=${encodeURIComponent(query)}`, {
+    static async searchInstruments(query: string, exchange?: string): Promise<InstrumentInDb[]> {
+        let url = `/instrument/search?query=${encodeURIComponent(query)}`;
+        if (exchange) {
+            url += `&exchange=${encodeURIComponent(exchange)}`;
+        }
+        return this.request<InstrumentInDb[]>(url, {
             method: 'GET',
         });
     }
@@ -572,7 +583,7 @@ export class ApiService {
         return response;
     }
 
-    // Dashboard Watchlists (Restore)
+    /* Watchlist dashboard logic commented out
     static async getDashboardWatchlists(): Promise<WatchlistInDb[]> {
         return this.request<WatchlistInDb[]>('/watchlist/dashboard');
     }
@@ -585,6 +596,7 @@ export class ApiService {
         this.invalidateCache('/watchlist/dashboard');
         return response;
     }
+    */
 
     // Suggestion Types
     static async getSuggestionTypes(): Promise<SuggestionTypeInDb[]> {

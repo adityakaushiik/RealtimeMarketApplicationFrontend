@@ -42,6 +42,7 @@ export interface InstrumentInDb extends InstrumentCreate {
     id: number;
     should_record_data?: boolean;
     is_active?: boolean;
+    exchange?: ExchangeInDb; // Optional, populated when joined
 }
 
 export interface InstrumentUpdate {
@@ -234,6 +235,7 @@ export interface ExchangeHolidayUpdate {
 // Watchlist Types
 export interface WatchlistCreate {
     name: string;
+    exchange_id: number;
     show_on_dashboard?: boolean;
 }
 
@@ -257,7 +259,8 @@ export interface WatchlistInDb {
     id: number;
     user_id: number;
     name: string;
-    show_on_dashboard?: boolean;
+    exchange_id: number;
+    show_on_dashboard: boolean;
     items?: WatchlistItemInDb[];
     instruments?: InstrumentInDb[]; // Populated by dashboard API
 }

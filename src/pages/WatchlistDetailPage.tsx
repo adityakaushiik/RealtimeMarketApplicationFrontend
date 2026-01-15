@@ -3,12 +3,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ApiService } from "@/shared/services/apiService";
 import type { WatchlistInDb, InstrumentInDb } from "@/shared/types/apiTypes";
 import { Button } from "@/components/ui/button";
-import { Trash2, ArrowLeft, MoreVertical, Edit2, Pin, PinOff } from "lucide-react";
+import { Trash2, ArrowLeft, MoreVertical, Edit2 } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -39,7 +38,7 @@ export function WatchlistDetailPage() {
     const [renameDialogOpen, setRenameDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [newName, setNewName] = useState("");
-    const [togglingDashboard, setTogglingDashboard] = useState(false);
+    // const [togglingDashboard, setTogglingDashboard] = useState(false); // Commented out
 
     useEffect(() => {
         if (id) {
@@ -102,6 +101,7 @@ export function WatchlistDetailPage() {
         }
     };
 
+    /* Commented out - show_on_dashboard functionality
     const handleToggleDashboard = async () => {
         if (!watchlist || togglingDashboard) return;
         setTogglingDashboard(true);
@@ -118,6 +118,7 @@ export function WatchlistDetailPage() {
             setTogglingDashboard(false);
         }
     };
+    */
 
     // Get instruments from the watchlist - either from instruments array or items with instrument
     const getInstruments = (): InstrumentInDb[] => {
@@ -164,12 +165,14 @@ export function WatchlistDetailPage() {
                 <div className="page-header" style={{ marginBottom: 0 }}>
                     <div className="flex items-center gap-2">
                         <h1 className="page-title">{watchlist.name}</h1>
+                        {/* Commented out - show_on_dashboard badge
                         {watchlist.show_on_dashboard && (
                             <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
                                 <Pin className="h-3 w-3" />
                                 <span className="hidden sm:inline">Dashboard</span>
                             </div>
                         )}
+                        */}
                     </div>
                     <p className="page-subtitle">{watchlist.items?.length || instruments.length || 0} items</p>
                 </div>
@@ -181,6 +184,7 @@ export function WatchlistDetailPage() {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                        {/* Commented out - show_on_dashboard toggle
                         <DropdownMenuItem onClick={handleToggleDashboard} disabled={togglingDashboard}>
                             {watchlist.show_on_dashboard ? (
                                 <>
@@ -193,6 +197,7 @@ export function WatchlistDetailPage() {
                             )}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
+                        */}
                         <DropdownMenuItem onClick={() => setRenameDialogOpen(true)}>
                             <Edit2 className="mr-2 h-4 w-4" /> Rename
                         </DropdownMenuItem>
