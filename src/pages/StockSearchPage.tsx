@@ -34,6 +34,8 @@ export function StockSearchPage() {
         return acc;
     }, {} as Record<number, ExchangeInDb>);
 
+    const currentExchangeInfo = selectedExchange ? exchanges.find(ex => ex.code === selectedExchange) : null;
+
     useEffect(() => {
         const fetchInstruments = async () => {
             if (!searchQuery.trim()) {
@@ -77,9 +79,23 @@ export function StockSearchPage() {
                     <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-incredibly-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/70">
                         Market Search
                     </h1>
-                    <p className="text-base sm:text-xl text-muted-foreground font-light max-w-lg mx-auto leading-relaxed px-4">
-                        Search across all exchanges and find the instrument you're looking for.
-                    </p>
+                    <div className="text-base sm:text-xl text-muted-foreground font-light max-w-lg mx-auto leading-relaxed px-4">
+                        {selectedExchange ? (
+                            <div className="flex flex-col items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                <span>Find instruments in <span className="font-semibold text-foreground">{currentExchangeInfo?.name || selectedExchange}</span></span>
+                                {/* <Badge variant="secondary" className="px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 shadow-sm">
+                                    <span className="relative flex h-2 w-2 mr-2">
+                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                      <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                                    </span>
+                                    Restricted to instruments in {selectedExchange}
+                                    <span>Find instruments in <span className="font-semibold text-foreground">{currentExchangeInfo?.name || selectedExchange}</span></span>
+                                </Badge> */}
+                            </div>
+                        ) : (
+                            <p>Search across all exchanges and find the instrument you're looking for.</p>
+                        )}
+                    </div>
                 </div>
 
                 <div
@@ -96,8 +112,13 @@ export function StockSearchPage() {
                     <Command className="rounded-lg sm:rounded-xl border-none bg-transparent" shouldFilter={false}>
                         <div className="flex items-center border-b border-border/50 px-3">
                             <Search className={`mr-2 h-4 w-4 sm:h-5 sm:w-5 shrink-0 transition-colors ${isFocused ? 'text-primary' : 'text-muted-foreground'}`} />
+                            {selectedExchange && (
+                                <span className="hidden sm:inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20 mr-2 shrink-0">
+                                    {selectedExchange}
+                                </span>
+                            )}
                             <CommandPrimitive.Input
-                                placeholder="Search by symbol or name..."
+                                placeholder={selectedExchange ? `Search for ${selectedExchange} stocks...` : "Search by symbol or name..."}
                                 value={searchQuery}
                                 onValueChange={setSearchQuery}
                                 className="flex h-12 sm:h-14 w-full rounded-md bg-transparent py-3 text-base sm:text-lg outline-none placeholder:text-muted-foreground/70 disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0"
