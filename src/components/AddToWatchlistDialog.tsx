@@ -96,7 +96,7 @@ export function AddToWatchlistDialog({ instrumentId, symbol, exchangeId, trigger
                 const newWl = await ApiService.createWatchlist({
                     name: newWatchlistName,
                     exchange_id: exchangeId,
-                    show_on_dashboard: true // Explicitly send true to satisfy backend
+                    show_on_dashboard: false // Explicitly send true to satisfy backend
                 });
                 targetWatchlistId = newWl.id;
             } else {

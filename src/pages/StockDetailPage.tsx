@@ -2,7 +2,7 @@ import { useParams } from "react-router-dom";
 import Chart from "@/components/Chart";
 import { useEffect, useState } from 'react';
 import { ApiService } from "@/shared/services/apiService";
-import type { InstrumentInDb /*, ProviderInstrumentMappingInDb */ } from "@/shared/types/apiTypes";
+import type { ExchangeInDb, InstrumentInDb /*, ProviderInstrumentMappingInDb */ } from "@/shared/types/apiTypes";
 import { Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,11 +28,12 @@ import { AddToWatchlistDialog } from "@/components/AddToWatchlistDialog";
 export function StockDetailPage() {
     const { symbol } = useParams<{ symbol: string }>();
     const [instrument, setInstrument] = useState<InstrumentInDb | null>(null);
+    const [exchange, setExchange] = useState<ExchangeInDb | null>(null);
     // const [mappings, setMappings] = useState<ProviderInstrumentMappingInDb[]>([]); // Commented out
     const [openDialog, setOpenDialog] = useState<'create' | 'update' | 'update_instrument' | 'delete_instrument' | null>(null);
     const [confirmRecordingToggle, setConfirmRecordingToggle] = useState(false);
 
-    const [currency, setCurrency] = useState<string>('');
+    // const [currency, setCurrency] = useState<string>(''); // Derived from exchange
 
     const user = ApiService.getCurrentUser();
     // Assuming role_id 1 is Admin.
@@ -54,8 +55,8 @@ export function StockDetailPage() {
                     }
 
                     try {
-                        const exchange = await ApiService.getExchangeById(found.exchange_id);
-                        setCurrency(exchange.currency || '');
+                        const ex = await ApiService.getExchangeById(found.exchange_id);
+                        setExchange(ex);
                     } catch (e) {
                         console.error("Failed to fetch exchange details", e);
                     }
@@ -149,6 +150,8 @@ export function StockDetailPage() {
                                     <InstrumentUpdateComponent
                                         initialInstrumentId={instrument.id}
                                         onUpdateComplete={() => {
+                                            // Invalidate cache first
+                                            ApiService.invalidateInstrumentCache(instrument.id, instrument.symbol);
                                             // Refresh instrument details
                                             ApiService.getInstrumentById(instrument.id).then(setInstrument);
                                             setOpenDialog(null);
@@ -190,6 +193,8 @@ export function StockDetailPage() {
                                         <Button variant={instrument.should_record_data ? "destructive" : "default"} onClick={async () => {
                                             try {
                                                 const updated = await ApiService.toggleInstrumentRecording(instrument.id, !instrument.should_record_data);
+                                                // Invalidate cache
+                                                ApiService.invalidateInstrumentCache(instrument.id, instrument.symbol);
                                                 setInstrument(updated);
                                                 setConfirmRecordingToggle(false);
                                             } catch (error) {
@@ -206,7 +211,7 @@ export function StockDetailPage() {
                 </div>
             </div>
 
-            <Chart symbol={symbol} currency={currency} />
+            <Chart symbol={symbol} currency={exchange?.currency || undefined} instrument={instrument} exchange={exchange} />
 
             {/* {
                 mappings.length > 0 && (

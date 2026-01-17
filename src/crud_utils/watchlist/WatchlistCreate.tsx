@@ -50,7 +50,7 @@ export function WatchlistCreateComponent({ onCreated }: { onCreated?: () => void
             await ApiService.createWatchlist({
                 name,
                 exchange_id: parseInt(exchangeId),
-                show_on_dashboard: true // Explicitly send true to satisfy backend
+                show_on_dashboard: false // Explicitly send true to satisfy backend
             });
             setSuccess(true);
             setName('');

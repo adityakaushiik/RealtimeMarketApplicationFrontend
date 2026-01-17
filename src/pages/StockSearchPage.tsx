@@ -13,6 +13,7 @@ import { ApiService } from "@/shared/services/apiService";
 import type { InstrumentInDb, ExchangeInDb } from "@/shared/types/apiTypes";
 import { Badge } from "@/components/ui/badge";
 import { useAppStore } from "@/shared/store/appStore";
+import { useDebounce } from "@/shared/utils/hooks/debounce-search";
 
 export function StockSearchPage() {
     const navigate = useNavigate()
@@ -22,6 +23,9 @@ export function StockSearchPage() {
     const [isFocused, setIsFocused] = useState(false);
     const { selectedExchange } = useAppStore();
     const [exchanges, setExchanges] = useState<ExchangeInDb[]>([]);
+
+    // Use debounced search query with .5s delay as requested
+    const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
     // Fetch exchanges once on mount (uses cache)
     useEffect(() => {
@@ -38,14 +42,14 @@ export function StockSearchPage() {
 
     useEffect(() => {
         const fetchInstruments = async () => {
-            if (!searchQuery.trim()) {
+            if (!debouncedSearchQuery.trim()) {
                 setInstruments([]);
                 return;
             }
 
             setLoading(true);
             try {
-                const data = await ApiService.searchInstruments(searchQuery, selectedExchange || undefined);
+                const data = await ApiService.searchInstruments(debouncedSearchQuery, selectedExchange || undefined);
                 if (Array.isArray(data)) {
                     setInstruments(data);
                 } else {
@@ -59,12 +63,8 @@ export function StockSearchPage() {
             }
         };
 
-        const timeoutId = setTimeout(() => {
-            fetchInstruments();
-        }, 300); // 300ms debounce
-
-        return () => clearTimeout(timeoutId);
-    }, [searchQuery, selectedExchange]);
+        fetchInstruments();
+    }, [debouncedSearchQuery, selectedExchange]);
 
     return (
         <div className="relative min-h-[calc(100vh-4rem)] flex flex-col items-center justify-start pt-10 sm:pt-16 lg:pt-20 overflow-hidden bg-background/50 px-4 sm:px-6">

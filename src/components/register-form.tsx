@@ -123,9 +123,9 @@ export function RegisterForm({
                         {loading ? "Creating account..." : "Sign Up"}
                     </Button>
                 </Field>
-                <FieldSeparator>Or continue with</FieldSeparator>
+                {/* <FieldSeparator>Or continue with</FieldSeparator> */}
                 <Field>
-                    <Button variant="outline" type="button" disabled={true}>
+                    {/* <Button variant="outline" type="button" disabled={true}>
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-5 h-5 mr-2">
                             <path
                                 d="M12.48 10.92v3.28h7.88c-.3 1.66-1.92 4.96-6.19 4.96c-3.73 0-6.79-3.07-6.79-6.84s3.06-6.84 6.79-6.84c2.1 0 3.51.89 4.31 1.68l2.6-2.58C19.38 3.1 16.32 2 12.48 2 6.94 2 2.44 6.49 2.44 12.03S6.94 22.06 12.48 22.06c5.78 0 9.6-4.06 9.6-9.76 0-.85-.09-1.48-.22-2.12H12.48z"
@@ -133,7 +133,7 @@ export function RegisterForm({
                             />
                         </svg>
                         Sign up with Google
-                    </Button>
+                    </Button> */}
                     <FieldDescription className="text-center">
                         Already have an account?{" "}
                         <a href="/login" className="underline underline-offset-4">

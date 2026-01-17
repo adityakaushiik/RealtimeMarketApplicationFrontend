@@ -141,6 +141,18 @@ export class ApiService {
         });
     }
 
+    public static invalidateInstrumentCache(id: number, symbol?: string) {
+        // Invalidate specific instrument cache
+        localStorage.removeItem(`api_cache_/instrument/${id}`);
+        if (symbol) {
+            localStorage.removeItem(`api_cache_/instrument/by-symbol/${symbol}`);
+            localStorage.removeItem(`api_cache_/instrument/details/${symbol}`);
+        }
+        
+        // Also invalidate lists since they might contain the updated instrument
+        this.invalidateInstrumentListCache();
+    }
+
     // Auth
     static async login(data: LoginRequest): Promise<LoginResponse> {
         const response = await this.request<LoginResponse>('/auth/login', {
@@ -242,11 +254,11 @@ export class ApiService {
     }
 
     static async getInstrumentDetails(exchangeSymbol: string): Promise<any> {
-        return this.getCached(`/instrument/details/${exchangeSymbol}`);
+        return this.request(`/instrument/details/${exchangeSymbol}`, { method: 'GET' });
     }
 
     static async getInstrumentBySymbol(symbol: string): Promise<InstrumentInDb> {
-        return this.getCached<InstrumentInDb>(`/instrument/by-symbol/${symbol}`);
+        return this.request<InstrumentInDb>(`/instrument/by-symbol/${symbol}`, { method: 'GET' });
     }
 
     static async getAllInstruments(): Promise<InstrumentInDb[]> {
@@ -263,7 +275,7 @@ export class ApiService {
     }
 
     static async getInstrumentById(id: number): Promise<InstrumentInDb> {
-        return this.getCached<InstrumentInDb>(`/instrument/${id}`);
+        return this.request<InstrumentInDb>(`/instrument/${id}`, { method: 'GET' });
     }
 
     static async updateInstrument(id: number, data: InstrumentUpdate): Promise<InstrumentInDb> {

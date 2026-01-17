@@ -19,10 +19,10 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Search, StopCircle } from "lucide-react";
+import { useAppStore } from "@/shared/store/appStore";
 
 export function RecordingInstrumentsPage() {
     const [instruments, setInstruments] = useState<InstrumentInDb[]>([]);
@@ -32,15 +32,25 @@ export function RecordingInstrumentsPage() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const navigate = useNavigate();
+    const { selectedExchange } = useAppStore();
 
     const fetchData = async () => {
+        if (!selectedExchange) return;
         setLoading(true);
         try {
             const [instData, exchData] = await Promise.all([
-                ApiService.getRecordingInstruments(),
+                ApiService.getInstruments(selectedExchange, undefined, true),
                 ApiService.getExchanges()
             ]);
-            setInstruments(instData);
+            
+            let instrumentsList: InstrumentInDb[] = [];
+            if (Array.isArray(instData)) {
+                instrumentsList = instData;
+            } else if (typeof instData === 'object' && instData !== null) {
+                instrumentsList = Object.values(instData);
+            }
+
+            setInstruments(instrumentsList);
             setExchanges(exchData);
         } catch (error) {
             console.error("Failed to fetch data", error);
@@ -51,7 +61,7 @@ export function RecordingInstrumentsPage() {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [selectedExchange]);
 
     const handleToggleClick = (instrument: InstrumentInDb) => {
         setSelectedInstrument(instrument);
@@ -157,10 +167,15 @@ export function RecordingInstrumentsPage() {
                                         <TableCell>{getExchangeName(inst.exchange_id)}</TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end">
-                                                <Switch
-                                                    checked={inst.should_record_data}
-                                                    onCheckedChange={() => handleToggleClick(inst)}
-                                                />
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="sm"
+                                                    className="h-8 shadow-sm transition-all border-destructive/50 text-destructive hover:bg-destructive/10 hover:border-destructive hover:text-destructive"
+                                                    onClick={() => handleToggleClick(inst)}
+                                                >
+                                                    <StopCircle className="mr-2 h-4 w-4" />
+                                                    Stop Recording
+                                                </Button>
                                             </div>
                                         </TableCell>
                                     </TableRow>

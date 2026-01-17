@@ -66,12 +66,16 @@ const getVolume = (data: MarketData): number => {
     return 0;
 };
 
+import type { InstrumentInDb, ExchangeInDb } from '../shared/types/apiTypes';
+
 interface ChartProps {
     symbol: string;
     currency?: string;
+    instrument?: InstrumentInDb | null;
+    exchange?: ExchangeInDb | null;
 }
 
-const Chart = ({ symbol }: ChartProps) => {
+const Chart = ({ symbol, instrument: propInstrument, exchange: propExchange }: ChartProps) => {
     // --- State ---
     const { theme } = useTheme();
     const [timeframe, setTimeframe] = useState<Timeframe>(TIMEFRAMES.ONE_DAY);
@@ -499,10 +503,18 @@ const Chart = ({ symbol }: ChartProps) => {
 
         const checkMarketStatus = async () => {
             try {
-                const instrument = await ApiService.getInstrumentBySymbol(symbol);
+                let instrument = propInstrument;
+                if (!instrument) {
+                     instrument = await ApiService.getInstrumentBySymbol(symbol);
+                }
+                
                 if (!instrument) return;
 
-                const exchange = await ApiService.getExchangeById(instrument.exchange_id);
+                let exchange = propExchange;
+                if (!exchange) {
+                    exchange = await ApiService.getExchangeById(instrument.exchange_id);
+                }
+
                 if (!exchange || !exchange.timezone || !exchange.market_open_time || !exchange.market_close_time) {
                     setIsMarketOpen(false);
                     return;

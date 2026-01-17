@@ -7,10 +7,10 @@ import { router } from './router'
 import { ThemeProvider } from './components/theme-provider'
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
+  // <StrictMode>
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <RouterProvider router={router} />
     </ThemeProvider>
-  </StrictMode>,
+  // </StrictMode>,
 )
 
