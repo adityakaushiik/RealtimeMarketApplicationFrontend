@@ -157,27 +157,28 @@ const InstrumentPriceDeferred = ({
         return 'text-muted-foreground';
     }, [symbolDataArray]);
 
-    const changePercentage = useMemo(() => {
-        // If prevClose was explicitly -1, do not show percentage (only if using prev_close)
+    const pointsChange = useMemo(() => {
+        // If prevClose was explicitly -1, do not show points (only if using prev_close)
         if (pctChangeBasis === 'prev_close' && snapshot?.prevClose === -1) return undefined;
 
         const currentPrice = getPrice(latestData);
 
-        // Use prevClose from snapshot for calculation
-        // If prevClose is 0 or undefined, we cannot calculate change correctly based on it.
-        // User requested: "when market is off... use the ltp to calculate the percentage"
-        // This likely means if prevClose is bad, assume 0% or handle gracefully.
-        // With the fallback to 'open' above, we try to provide a meaningful change.
         if (currentPrice === undefined || currentPrice === 0 || !previousClose || previousClose === 0) return undefined;
 
-        return ((currentPrice - previousClose) / previousClose) * 100;
+        return currentPrice - previousClose;
     }, [latestData, previousClose, snapshot, pctChangeBasis]);
 
+    const changePercentage = useMemo(() => {
+        if (pointsChange === undefined || !previousClose) return undefined;
+
+        return (pointsChange / previousClose) * 100;
+    }, [pointsChange, previousClose]);
+
     const formattedChange = useMemo(() => {
-        if (changePercentage === undefined) return '';
-        const sign = changePercentage >= 0 ? '+' : '';
-        return `${sign}${changePercentage.toFixed(2)}%`;
-    }, [changePercentage]);
+        if (pointsChange === undefined || changePercentage === undefined) return '';
+        const sign = pointsChange >= 0 ? '+' : '';
+        return `${sign}${pointsChange.toFixed(2)} (${sign}${changePercentage.toFixed(2)}%)`;
+    }, [pointsChange, changePercentage]);
 
     const changeColor = useMemo(() => {
         if (changePercentage === undefined) return 'text-muted-foreground';

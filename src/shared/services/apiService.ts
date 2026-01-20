@@ -100,6 +100,7 @@ export class ApiService {
 
     // Caching wrapper for GET requests
     private static async getCached<T>(url: string, forceRefresh = false): Promise<T> {
+        /*
         const cacheKey = `api_cache_${url}`;
         if (!forceRefresh) {
             const cached = localStorage.getItem(cacheKey);
@@ -112,8 +113,10 @@ export class ApiService {
                 }
             }
         }
+        */
 
         const data = await this.request<T>(url, { method: 'GET' });
+        /*
         try {
             localStorage.setItem(cacheKey, JSON.stringify(data));
         } catch (e) {
@@ -122,6 +125,7 @@ export class ApiService {
             // Optionally clear old cache entries to make room
             this.clearOldCacheEntries();
         }
+        */
         return data;
     }
 
@@ -148,7 +152,7 @@ export class ApiService {
             localStorage.removeItem(`api_cache_/instrument/by-symbol/${symbol}`);
             localStorage.removeItem(`api_cache_/instrument/details/${symbol}`);
         }
-        
+
         // Also invalidate lists since they might contain the updated instrument
         this.invalidateInstrumentListCache();
     }
@@ -219,6 +223,12 @@ export class ApiService {
 
     static async updateUserStatus(id: number, status: number): Promise<UserInDb> {
         return this.request<UserInDb>(`/user/update_status/${id}?user_status=${status}`, {
+            method: 'PATCH',
+        });
+    }
+
+    static async updateUserRole(id: number, roleId: number): Promise<UserInDb> {
+        return this.request<UserInDb>(`/user/update_role/${id}?role_id=${roleId}`, {
             method: 'PATCH',
         });
     }

@@ -5,8 +5,8 @@ import type { UserInDb } from '@/shared/types/apiTypes';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Check, X, Ban, RefreshCw, UserCheck, ShieldAlert, Clock, KeyRound } from 'lucide-react';
-import { UserStatus } from '@/shared/utils/CommonConstants';
+import { UserStatus, UserRoles } from '@/shared/utils/CommonConstants';
+import { Check, X, Ban, RefreshCw, UserCheck, ShieldAlert, Clock, KeyRound, ShieldCheck, UserCog } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -50,10 +50,31 @@ export const UserApprovalPage = () => {
     const [selectedUserForReset, setSelectedUserForReset] = useState<UserInDb | null>(null);
     const [newResetPassword, setNewResetPassword] = useState("");
 
+    const [roleUpdateOpen, setRoleUpdateOpen] = useState(false);
+    const [selectedUserForRole, setSelectedUserForRole] = useState<UserInDb | null>(null);
+
     const openResetPasswordDialog = (user: UserInDb) => {
         setSelectedUserForReset(user);
         setNewResetPassword("");
         setResetPasswordOpen(true);
+    };
+
+    const openRoleUpdateDialog = (user: UserInDb) => {
+        setSelectedUserForRole(user);
+        setRoleUpdateOpen(true);
+    };
+
+    const handleRoleUpdate = async (roleId: number) => {
+        if (!selectedUserForRole) return;
+        try {
+            await ApiService.updateUserRole(selectedUserForRole.id, roleId);
+            setRoleUpdateOpen(false);
+            setSelectedUserForRole(null);
+            await fetchUsers();
+        } catch (error) {
+            console.error("Failed to update role", error);
+            alert("Failed to update user role");
+        }
     };
 
     const handleResetPasswordSubmit = async (e: React.FormEvent) => {
@@ -118,7 +139,7 @@ export const UserApprovalPage = () => {
                                         {user.username || 'No Username'}
                                     </span>
                                     <Badge variant="outline" className="text-[10px] py-0 h-4">
-                                        {user.role_id === 1 ? 'Admin' : 'User'}
+                                        {user.role_id === UserRoles.ADMIN ? 'Admin' : 'Viewer'}
                                     </Badge>
                                 </div>
                                 <span className="text-[11px] sm:text-xs font-medium text-muted-foreground truncate">
@@ -150,6 +171,9 @@ export const UserApprovalPage = () => {
                                         <RefreshCw className="w-4 h-4 mr-1" /> <span className="hidden sm:inline">Reactivate</span>
                                     </Button>
                                 )}
+                                <Button size="sm" variant="outline" className="h-8" onClick={() => openRoleUpdateDialog(user)}>
+                                    <UserCog className="w-4 h-4 mr-1" /> <span className="hidden sm:inline">Change Role</span>
+                                </Button>
                                 <Button size="sm" variant="outline" className="h-8" onClick={() => openResetPasswordDialog(user)}>
                                     <KeyRound className="w-4 h-4 mr-1" /> <span className="hidden sm:inline">Reset Password</span>
                                 </Button>
@@ -237,6 +261,40 @@ export const UserApprovalPage = () => {
                             <Button type="submit">Reset Password</Button>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+            <Dialog open={roleUpdateOpen} onOpenChange={setRoleUpdateOpen}>
+                <DialogContent className="max-w-[350px]">
+                    <DialogHeader>
+                        <DialogTitle>Update User Role</DialogTitle>
+                        <DialogDescription>
+                            Select a new role for <b>{selectedUserForRole?.username}</b>.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-3 py-4">
+                        <Button
+                            variant={selectedUserForRole?.role_id === UserRoles.ADMIN ? "default" : "outline"}
+                            className="justify-start gap-2 h-12"
+                            onClick={() => handleRoleUpdate(UserRoles.ADMIN)}
+                        >
+                            <ShieldCheck className="w-5 h-5 text-primary" />
+                            <div className="flex flex-col items-start">
+                                <span className="text-sm font-semibold">Administrator</span>
+                                <span className="text-[10px] opacity-70">Full access to all features</span>
+                            </div>
+                        </Button>
+                        <Button
+                            variant={selectedUserForRole?.role_id === UserRoles.VIEWER ? "default" : "outline"}
+                            className="justify-start gap-2 h-12"
+                            onClick={() => handleRoleUpdate(UserRoles.VIEWER)}
+                        >
+                            <UserCheck className="w-5 h-5 text-primary" />
+                            <div className="flex flex-col items-start">
+                                <span className="text-sm font-semibold">Viewer</span>
+                                <span className="text-[10px] opacity-70">Read-only access to market data</span>
+                            </div>
+                        </Button>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>

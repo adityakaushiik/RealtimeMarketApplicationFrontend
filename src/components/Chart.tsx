@@ -105,10 +105,12 @@ const Chart = ({ symbol, instrument: propInstrument, exchange: propExchange }: C
         return undefined;
     }, [symbolDataArray]);
 
-    const percentChange = useMemo(() => {
+    const priceChange = useMemo(() => {
         if (currentPrice !== null && prevClose) {
-            const change = currentPrice - prevClose;
-            return (change / prevClose) * 100;
+            return {
+                points: currentPrice - prevClose,
+                percent: ((currentPrice - prevClose) / prevClose) * 100
+            };
         }
         return null;
     }, [currentPrice, prevClose]);
@@ -137,6 +139,8 @@ const Chart = ({ symbol, instrument: propInstrument, exchange: propExchange }: C
     // Track the last candle and volume to properly merge live updates
     const lastCandleRef = useRef<CandlestickData | null>(null);
     const lastVolumeRef = useRef<HistogramData | null>(null);
+    const lastBackgroundRef = useRef<HistogramData | null>(null);
+    const backgroundSeriesRef = useRef<ReturnType<ReturnType<typeof createChart>['addSeries']> | null>(null);
 
 
     // --- Legend & Hover State ---
@@ -264,6 +268,16 @@ const Chart = ({ symbol, instrument: propInstrument, exchange: propExchange }: C
             }
         });
 
+        const backgroundSeries = chart.addSeries(HistogramSeries, {
+            color: 'transparent',
+            priceFormat: { type: 'custom', formatter: () => '' },
+            priceScaleId: 'background',
+        });
+        chart.priceScale('background').applyOptions({
+            scaleMargins: { top: 0, bottom: 0 },
+            visible: false,
+        });
+
         const candleSeries = chart.addSeries(CandlestickSeries, {
             upColor: '#26a69a',
             downColor: '#ef5350',
@@ -289,6 +303,7 @@ const Chart = ({ symbol, instrument: propInstrument, exchange: propExchange }: C
         chartRef.current = chart;
         seriesRef.current = candleSeries;
         volumeSeriesRef.current = volumeSeries;
+        backgroundSeriesRef.current = backgroundSeries;
 
         // Subscribe to crosshair move
         chart.subscribeCrosshairMove(param => {
@@ -389,6 +404,80 @@ const Chart = ({ symbol, instrument: propInstrument, exchange: propExchange }: C
                     volumeSeriesRef.current.setData(volumes);
                 }
 
+                // Handle Background Shading for Intraday
+                if (timeframe !== TIMEFRAMES.ONE_DAY && backgroundSeriesRef.current && (propExchange || propInstrument?.exchange)) {
+                    const exchangeToUse = propExchange || propInstrument?.exchange;
+                    if (exchangeToUse && exchangeToUse.timezone && exchangeToUse.market_open_time && exchangeToUse.market_close_time) {
+                        const backgroundData: HistogramData[] = [];
+
+                        // Parse exchange times
+                        const parseTime = (t: string) => {
+                            const [h, m, s] = t.split(':').map(Number);
+                            return h * 3600 + m * 60 + (s || 0);
+                        };
+                        const marketOpen = parseTime(exchangeToUse.market_open_time!);
+                        const marketClose = parseTime(exchangeToUse.market_close_time!);
+                        const preOpen = exchangeToUse.pre_market_open_time ? parseTime(exchangeToUse.pre_market_open_time) : (marketOpen - 3600); // 1h buffer default if missing
+                        const postClose = exchangeToUse.post_market_close_time ? parseTime(exchangeToUse.post_market_close_time) : (marketClose + 3600);
+
+                        // Timezone formatter
+                        // Note: creating formatter inside loop is slow, create once
+                        // We need to parse unix timestamp to exchange local time parts
+                        const formatter = new Intl.DateTimeFormat('en-US', {
+                            timeZone: exchangeToUse.timezone!,
+                            hour: 'numeric',
+                            minute: 'numeric',
+                            second: 'numeric',
+                            hour12: false
+                        });
+
+                        candles.forEach(candle => {
+                            const ts = typeof candle.time === 'number' ? candle.time : new Date(candle.time).getTime() / 1000;
+
+                            const parts = formatter.formatToParts(new Date(ts * 1000));
+                            const h = parseInt(parts.find(p => p.type === 'hour')?.value || '0');
+                            const m = parseInt(parts.find(p => p.type === 'minute')?.value || '0');
+                            const s = parseInt(parts.find(p => p.type === 'second')?.value || '0');
+
+                            const currentSeconds = h * 3600 + m * 60 + s;
+
+                            let color = 'transparent';
+
+                            // Check Pre-Market
+                            // Assuming pre-market is everything before market_open_time
+                            // But usually, it starts from pre_market_open_time
+                            // For safety, let's just say if < open -> Pre, if > close -> Post
+
+                            if (currentSeconds < marketOpen) {
+                                // Only if it is after reasonable start of day or within pre-market window
+                                // Some exchanges might have late opens. 
+                                // User said "indicate ... values", implying we just highlight them.
+                                color = 'rgba(255, 165, 0, 0.12)'; // Orange tint
+                            } else if (currentSeconds >= marketClose) {
+                                color = 'rgba(124, 58, 237, 0.12)'; // Violet tint
+                            }
+
+                            backgroundData.push({
+                                time: candle.time,
+                                value: 100, // Full height relative to 0-100 range? Or just arbitrary large number if autoscaling? 
+                                // We disabled autoscale and set margins 0,0. 
+                                // But Histogram base is 0.
+                                // If scale is Normal, and margins 0,0, then we need to know the max.
+                                // Wait, simple trick: value: 1, and no other values. 
+                                // Actually, if we set margins 0,0, the range is determined by data?
+                                // Let's set value 1.
+                                color: color
+                            });
+                        });
+                        backgroundSeriesRef.current.setData(backgroundData);
+                        lastBackgroundRef.current = backgroundData.length > 0 ? backgroundData[backgroundData.length - 1] : null;
+                    }
+                } else if (backgroundSeriesRef.current) {
+                    // Clear background if daily or no exchange
+                    backgroundSeriesRef.current.setData([]);
+                    lastBackgroundRef.current = null;
+                }
+
                 // Update state refs
                 lastCandleRef.current = candles.length > 0 ? candles[candles.length - 1] : null;
                 lastVolumeRef.current = volumes.length > 0 ? volumes[volumes.length - 1] : null;
@@ -416,7 +505,7 @@ const Chart = ({ symbol, instrument: propInstrument, exchange: propExchange }: C
         };
 
         fetchData();
-    }, [symbol, timeframe]);
+    }, [symbol, timeframe, propExchange, propInstrument]);
 
     // --- WebSocket Subscription ---
     useEffect(() => {
@@ -472,6 +561,51 @@ const Chart = ({ symbol, instrument: propInstrument, exchange: propExchange }: C
         seriesRef.current.update(candle);
         if (volumeSeriesRef.current) {
             volumeSeriesRef.current.update(volumeData);
+        }
+
+        // Live Update Background
+        if (backgroundSeriesRef.current && timeframe !== TIMEFRAMES.ONE_DAY && (propExchange || propInstrument?.exchange)) {
+            const exchangeToUse = propExchange || propInstrument?.exchange;
+            if (exchangeToUse && exchangeToUse.timezone && exchangeToUse.market_open_time && exchangeToUse.market_close_time) {
+                const parseTime = (t: string) => {
+                    const [h, m, s] = t.split(':').map(Number);
+                    return h * 3600 + m * 60 + (s || 0);
+                };
+                const marketOpen = parseTime(exchangeToUse.market_open_time!);
+                const marketClose = parseTime(exchangeToUse.market_close_time!);
+
+                const formatter = new Intl.DateTimeFormat('en-US', {
+                    timeZone: exchangeToUse.timezone!,
+                    hour: 'numeric',
+                    minute: 'numeric',
+                    second: 'numeric',
+                    hour12: false
+                });
+
+                const ts = typeof candle.time === 'number' ? candle.time : new Date(candle.time).getTime() / 1000;
+                const parts = formatter.formatToParts(new Date(ts * 1000));
+                const h = parseInt(parts.find(p => p.type === 'hour')?.value || '0');
+                const m = parseInt(parts.find(p => p.type === 'minute')?.value || '0');
+                const s = parseInt(parts.find(p => p.type === 'second')?.value || '0');
+
+                const currentSeconds = h * 3600 + m * 60 + s;
+                let color = 'transparent';
+                if (currentSeconds < marketOpen) color = 'rgba(255, 165, 0, 0.12)';
+                else if (currentSeconds >= marketClose) color = 'rgba(124, 58, 237, 0.12)';
+
+                // Since background update needs checks similar to candle update (isNew vs Update)
+                // If isNew, we append. If not, we update last.
+                // Background data structure is simple {time, value=100, color}
+
+                const bgData = {
+                    time: candle.time,
+                    value: 100,
+                    color: color
+                };
+
+                backgroundSeriesRef.current.update(bgData);
+                // No need to track complicated aggregation for background, it maps 1:1 to candles
+            }
         }
 
         lastCandleRef.current = candle;
@@ -593,9 +727,9 @@ const Chart = ({ symbol, instrument: propInstrument, exchange: propExchange }: C
                             <span className="text-2xl font-bold tracking-tight text-foreground">
                                 {currentPrice ? currentPrice.toFixed(2) : '--'}
                             </span>
-                            {percentChange !== null && (
-                                <span className={`text-sm font-medium ${percentChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                    {percentChange >= 0 ? '+' : ''}{percentChange.toFixed(2)}%
+                            {priceChange !== null && (
+                                <span className={`text-sm font-medium ${priceChange.points >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                    {priceChange.points >= 0 ? '+' : ''}{priceChange.points.toFixed(2)} ({priceChange.points >= 0 ? '+' : ''}{priceChange.percent.toFixed(2)}%)
                                 </span>
                             )}
                             {isLoading && <span className="text-[10px] sm:text-xs text-muted-foreground animate-pulse ml-2">Loading...</span>}

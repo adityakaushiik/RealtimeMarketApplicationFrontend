@@ -92,7 +92,7 @@ class WebSocketManager {
 
                             if (message) {
                                 DataService.saveData(message.symbol, message);
-                                // console.log('📊 Binary Message:', message);
+                                console.log('📊 Binary Message:', message);
                             }
                         }
                     } else {
