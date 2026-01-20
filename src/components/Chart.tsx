@@ -424,7 +424,9 @@ const Chart = ({ symbol, instrument: propInstrument, exchange: propExchange }: C
         WebSocketService.sendMessage({
             message_type: WebSocketMessageType.SUBSCRIBE,
             channel: symbol,
-            type: 'ltp' // We need ticks for the chart
+            type: 'ltp', // We need ticks for the chart
+            exchange_id: propInstrument?.exchange_id || propExchange?.id,
+            exchange_code: propExchange?.code || propInstrument?.exchange?.code
         });
 
         return () => {
@@ -436,7 +438,7 @@ const Chart = ({ symbol, instrument: propInstrument, exchange: propExchange }: C
                 channel: symbol,
             });
         };
-    }, [symbol]);
+    }, [symbol, propInstrument, propExchange]);
 
     // --- Live Updates ---
     useEffect(() => {
@@ -505,9 +507,9 @@ const Chart = ({ symbol, instrument: propInstrument, exchange: propExchange }: C
             try {
                 let instrument = propInstrument;
                 if (!instrument) {
-                     instrument = await ApiService.getInstrumentBySymbol(symbol);
+                    instrument = await ApiService.getInstrumentBySymbol(symbol);
                 }
-                
+
                 if (!instrument) return;
 
                 let exchange = propExchange;

@@ -154,7 +154,11 @@ export const DashboardPage = () => {
                             >
                                 <div className="flex justify-between items-start mb-2">
                                     <span className="font-bold text-lg">{index.symbol}</span>
-                                    <InstrumentPriceDeferred symbol={index.symbol} />
+                                    <InstrumentPriceDeferred
+                                        symbol={index.symbol}
+                                        exchange_id={index.exchange_id}
+                                        exchange_code={selectedExchange || undefined}
+                                    />
                                 </div>
                                 <div className="text-sm text-muted-foreground truncate">{index.name}</div>
                             </div>
@@ -205,6 +209,8 @@ export const DashboardPage = () => {
                                 <div className="flex flex-col items-end min-w-[70px] sm:min-w-[100px]">
                                     <InstrumentPriceDeferred
                                         symbol={instrument.symbol}
+                                        exchange_id={instrument.exchange_id}
+                                        exchange_code={selectedExchange || undefined}
                                         className="text-sm sm:text-lg font-mono font-bold"
                                     />
                                 </div>

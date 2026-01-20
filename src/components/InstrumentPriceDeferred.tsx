@@ -13,6 +13,16 @@ interface InstrumentPriceDeferredProps {
     symbol: string;
 
     /**
+     * Optional exchange ID for the instrument
+     */
+    exchange_id?: number;
+
+    /**
+     * Optional exchange code for the instrument
+     */
+    exchange_code?: string;
+
+    /**
      * Optional className for styling the component
      */
     className?: string;
@@ -52,6 +62,8 @@ interface InstrumentPriceDeferredProps {
  */
 const InstrumentPriceDeferred = ({
     symbol,
+    exchange_id,
+    exchange_code,
     className = '',
     onVisibilityChange,
     threshold = 0.1,
@@ -110,7 +122,7 @@ const InstrumentPriceDeferred = ({
         let p: number | undefined;
         if (d.price !== undefined && d.price !== null) p = d.price;
         else if (d.close !== undefined && d.close !== null) p = d.close;
-        
+
         // Filter out -1 (unavailable)
         if (p !== undefined && p !== -1) return p;
         return undefined;
@@ -216,6 +228,8 @@ const InstrumentPriceDeferred = ({
                 message_type: WebSocketMessageType.SUBSCRIBE,
                 channel: symbol,
                 type: 'ltp', // or 'ohlcv' depending on your needs
+                exchange_id,
+                exchange_code,
             });
 
             isSubscribedRef.current = true;
@@ -234,7 +248,7 @@ const InstrumentPriceDeferred = ({
 
             isSubscribedRef.current = false;
         }
-    }, [isVisible, symbol, isConnected]);
+    }, [isVisible, symbol, isConnected, exchange_id, exchange_code]);
 
     // Cleanup: Unsubscribe on unmount
     useEffect(() => {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ApiService } from "@/shared/services/apiService";
-import type { WatchlistInDb, InstrumentInDb } from "@/shared/types/apiTypes";
+import type { WatchlistInDb, InstrumentInDb, ExchangeInDb } from "@/shared/types/apiTypes";
 import { Button } from "@/components/ui/button";
 import { Trash2, ArrowLeft, MoreVertical, Edit2 } from "lucide-react";
 import {
@@ -34,6 +34,7 @@ export function WatchlistDetailPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [watchlist, setWatchlist] = useState<WatchlistInDb | null>(null);
+    const [exchange, setExchange] = useState<ExchangeInDb | null>(null);
     const [loading, setLoading] = useState(true);
     const [renameDialogOpen, setRenameDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -52,6 +53,14 @@ export function WatchlistDetailPage() {
             const data = await ApiService.getWatchlistById(watchlistId);
             setWatchlist(data);
             setNewName(data.name);
+
+            // Fetch exchange to get the code
+            try {
+                const exData = await ApiService.getExchangeById(data.exchange_id);
+                setExchange(exData);
+            } catch (exError) {
+                console.error("Failed to fetch exchange for watchlist", exError);
+            }
         } catch (error) {
             console.error("Failed to fetch watchlist", error);
             // Maybe redirect if not found
@@ -228,7 +237,12 @@ export function WatchlistDetailPage() {
                                     <span className="text-xs sm:text-sm text-muted-foreground truncate">{inst.name}</span>
                                 </div>
                                 <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-                                    <InstrumentPriceDeferred symbol={inst.symbol} className="text-sm sm:text-lg font-mono font-bold" />
+                                    <InstrumentPriceDeferred
+                                        symbol={inst.symbol}
+                                        exchange_id={inst.exchange_id}
+                                        exchange_code={exchange?.code}
+                                        className="text-sm sm:text-lg font-mono font-bold"
+                                    />
                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors" onClick={() => handleRemoveItem(inst.id)}>
                                         <Trash2 className="h-4 w-4" />
                                     </Button>
