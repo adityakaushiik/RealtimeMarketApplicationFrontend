@@ -27,6 +27,7 @@ import {
     DialogClose,
 } from "@/components/ui/dialog";
 import { SuggestionSubmitDialog } from "./SuggestionSubmitDialog";
+import { Logo } from "@/components/Logo";
 
 export function Header() {
     const [exchanges, setExchanges] = useState<ExchangeInDb[]>([]);
@@ -59,9 +60,7 @@ export function Header() {
         <header className="flex items-center justify-between px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-b bg-background w-full">
             <div className="flex items-center gap-2 sm:gap-4">
                 <SidebarTrigger />
-                <h1 className="text-base sm:text-lg lg:text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent hidden sm:block">
-                    MarketRealtime
-                </h1>
+                <Logo className="h-7 sm:h-8 lg:h-9 w-auto hidden sm:block text-foreground" />
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">

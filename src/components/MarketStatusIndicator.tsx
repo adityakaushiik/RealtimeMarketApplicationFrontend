@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
-import type { ExchangeInDb } from '@/shared/types/apiTypes';
+import { AlertTriangle, Calendar } from 'lucide-react';
+import type { ExchangeInDb, ExchangeHolidayInDb } from '@/shared/types/apiTypes';
 
 interface MarketStatusIndicatorProps {
     exchange: ExchangeInDb | null;
@@ -19,6 +20,16 @@ const parseTimeToMinutes = (timeStr: string | null | undefined): number | null =
     const minutes = parseInt(parts[1], 10);
     if (isNaN(hours) || isNaN(minutes)) return null;
     return hours * 60 + minutes;
+};
+
+/**
+ * Format time string (HH:mm:ss or HH:mm) to display format (HH:mm)
+ */
+const formatTime = (timeStr: string | null | undefined): string => {
+    if (!timeStr) return '';
+    const parts = timeStr.split(':');
+    if (parts.length < 2) return timeStr;
+    return `${parts[0]}:${parts[1]}`;
 };
 
 /**
@@ -83,12 +94,76 @@ const getExchangeLocalTime = (exchangeTimezone: string | null | undefined): { ho
 /**
  * Determines the market status based on current time in exchange timezone
  */
-export type MarketStatus = 'pre-market' | 'open' | 'post-market' | 'closed' | 'unknown';
+export type MarketStatus = 'pre-market' | 'open' | 'post-market' | 'closed' | 'holiday' | 'special-session' | 'unknown';
 
-const getMarketStatus = (exchange: ExchangeInDb | null): { status: MarketStatus; nextEvent: string | null } => {
+interface MarketStatusResult {
+    status: MarketStatus;
+    nextEvent: string | null;
+    holiday?: ExchangeHolidayInDb;
+}
+
+const getMarketStatus = (exchange: ExchangeInDb | null): MarketStatusResult => {
     if (!exchange) return { status: 'unknown', nextEvent: null };
 
-    // Get current time in exchange's timezone
+    // Check for current day holidays FIRST - this overrides standard behavior
+    const holidays = exchange.current_day_holidays;
+    if (holidays && holidays.length > 0) {
+        const holiday = holidays[0]; // Use the first holiday entry for today
+
+        if (holiday.is_closed) {
+            // Market is fully closed for this holiday
+            return {
+                status: 'holiday',
+                nextEvent: null,
+                holiday
+            };
+        } else {
+            // Special session (e.g., Muhurat Trading) - market open with modified hours
+            const { hours, minutes } = getExchangeLocalTime(exchange.timezone);
+            const currentMinutes = hours * 60 + minutes;
+
+            const specialOpen = parseTimeToMinutes(holiday.open_time);
+            const specialClose = parseTimeToMinutes(holiday.close_time);
+
+            if (specialOpen !== null && specialClose !== null) {
+                if (currentMinutes >= specialOpen && currentMinutes < specialClose) {
+                    const minsToClose = specialClose - currentMinutes;
+                    const hrs = Math.floor(minsToClose / 60);
+                    const mins = minsToClose % 60;
+                    return {
+                        status: 'special-session',
+                        nextEvent: hrs > 0 ? `Ends in ${hrs}h ${mins}m` : `Ends in ${mins}m`,
+                        holiday
+                    };
+                } else if (currentMinutes < specialOpen) {
+                    const minsToOpen = specialOpen - currentMinutes;
+                    const hrs = Math.floor(minsToOpen / 60);
+                    const mins = minsToOpen % 60;
+                    return {
+                        status: 'special-session',
+                        nextEvent: hrs > 0 ? `Opens in ${hrs}h ${mins}m` : `Opens in ${mins}m`,
+                        holiday
+                    };
+                } else {
+                    // Session ended
+                    return {
+                        status: 'holiday',
+                        nextEvent: 'Session ended',
+                        holiday
+                    };
+                }
+            }
+
+            // Fallback if no times specified
+            return {
+                status: 'special-session',
+                nextEvent: null,
+                holiday
+            };
+        }
+    }
+
+    // Standard market hours logic
     const { hours, minutes, dayOfWeek } = getExchangeLocalTime(exchange.timezone);
     const currentMinutes = hours * 60 + minutes;
 
@@ -160,6 +235,8 @@ const statusConfig: Record<MarketStatus, { label: string; variant: 'default' | '
     'open': { label: 'Market Open', variant: 'default', dotColor: 'bg-green-500' },
     'post-market': { label: 'Post-Market', variant: 'secondary', dotColor: 'bg-amber-500' },
     'closed': { label: 'Closed', variant: 'outline', dotColor: 'bg-red-500' },
+    'holiday': { label: 'Closed', variant: 'destructive', dotColor: 'bg-red-500' },
+    'special-session': { label: 'Special Session', variant: 'secondary', dotColor: 'bg-purple-500' },
     'unknown': { label: 'Unknown', variant: 'outline', dotColor: 'bg-gray-400' }
 };
 
@@ -174,7 +251,7 @@ export function MarketStatusIndicator({ exchange, className = '', showDetails = 
         return () => clearInterval(interval);
     }, []);
 
-    const { status, nextEvent } = useMemo(() => {
+    const { status, nextEvent, holiday } = useMemo(() => {
         // tick is used to force recalculation every minute
         void tick;
         return getMarketStatus(exchange);
@@ -182,6 +259,53 @@ export function MarketStatusIndicator({ exchange, className = '', showDetails = 
 
     const config = statusConfig[status];
 
+    // Holiday/Special Session display
+    if (status === 'holiday' && holiday) {
+        return (
+            <div className={`flex flex-col gap-1 ${className}`}>
+                <div className="flex items-center gap-2">
+                    <Badge variant="destructive" className="gap-1.5 font-normal">
+                        <AlertTriangle className="w-3 h-3" />
+                        Closed - {holiday.description || 'Holiday'}
+                    </Badge>
+                </div>
+                {showDetails && (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        Market holiday
+                    </span>
+                )}
+            </div>
+        );
+    }
+
+    if (status === 'special-session' && holiday) {
+        const timeRange = holiday.open_time && holiday.close_time
+            ? `${formatTime(holiday.open_time)} - ${formatTime(holiday.close_time)}`
+            : null;
+
+        return (
+            <div className={`flex flex-col gap-1 ${className}`}>
+                <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="gap-1.5 font-normal bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+                        <span className={`w-2 h-2 rounded-full bg-purple-500 animate-pulse`}></span>
+                        {holiday.description || 'Special Session'}
+                    </Badge>
+                    {showDetails && nextEvent && (
+                        <span className="text-xs text-muted-foreground">{nextEvent}</span>
+                    )}
+                </div>
+                {showDetails && timeRange && (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        Hours: {timeRange}
+                    </span>
+                )}
+            </div>
+        );
+    }
+
+    // Standard status display
     return (
         <div className={`flex items-center gap-2 ${className}`}>
             <Badge variant={config.variant} className="gap-1.5 font-normal">

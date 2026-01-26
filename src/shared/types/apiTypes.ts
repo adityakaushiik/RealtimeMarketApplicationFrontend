@@ -25,6 +25,7 @@ export interface ExchangeUpdate {
 
 export interface ExchangeInDb extends ExchangeCreate {
     id: number;
+    current_day_holidays?: ExchangeHolidayInDb[];
 }
 
 export interface InstrumentCreate {

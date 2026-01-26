@@ -1,5 +1,5 @@
-import { GalleryVerticalEnd } from "lucide-react";
 import { LoginForm } from "@/components/login-form";
+import { Logo } from "@/components/Logo";
 
 export default function LoginPage() {
     return (
@@ -7,10 +7,7 @@ export default function LoginPage() {
             <div className="flex flex-col gap-4 p-4 sm:p-6 md:p-10">
                 <div className="flex justify-center gap-2 md:justify-start">
                     <a href="#" className="flex items-center gap-2 font-medium">
-                        <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-                            <GalleryVerticalEnd className="size-4" />
-                        </div>
-                        <span className="text-sm sm:text-base">MarketRealtime</span>
+                        <Logo className="h-8 sm:h-10 w-auto text-foreground" />
                     </a>
                 </div>
                 <div className="flex flex-1 items-center justify-center">
@@ -19,12 +16,12 @@ export default function LoginPage() {
                     </div>
                 </div>
             </div>
-            <div className="bg-muted relative hidden lg:block">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-background flex items-center justify-center">
-                    <div className="text-center space-y-4 p-8">
-                        <h2 className="text-3xl xl:text-4xl font-bold">Real-time Market Data</h2>
-                        <p className="text-lg xl:text-xl text-muted-foreground">
-                            Track stocks, analyze trends, and make informed decisions.
+            <div className="relative hidden lg:block bg-[#d3d3d3]">
+                <div className="absolute inset-0 bg-gradient-to-br from-black/5 via-transparent to-black/10 flex items-center justify-center">
+                    <div className="text-center space-y-6 p-8">
+                        <Logo className="h-24 xl:h-32 w-auto mx-auto text-gray-900" />
+                        <p className="text-lg xl:text-xl text-gray-700 font-light italic">
+                            Decision-Grade Market Intelligence
                         </p>
                     </div>
                 </div>
