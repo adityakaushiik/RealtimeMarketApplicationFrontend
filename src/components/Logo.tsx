@@ -18,11 +18,11 @@ export function Logo({ className }: { className?: string }) {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 120 32"
+            viewBox="0 0 78 32"
             className={className}
             aria-label="DGEX Logo"
-            // Ensure the svg takes up space but text is centered
-            preserveAspectRatio="xMidYMid meet"
+            // Ensure the svg takes up space but text is aligned properly
+            preserveAspectRatio="xMinYMid meet"
         >
             <defs>
                 {/* 
@@ -78,10 +78,10 @@ export function Logo({ className }: { className?: string }) {
                We render the text using the base gradient.
             */}
             <text
-                x="50%"
+                x="0"
                 y="55%"
                 dominantBaseline="middle"
-                textAnchor="middle"
+                textAnchor="start"
                 fontFamily="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
                 fontSize="28"
                 fontWeight="800"
@@ -98,10 +98,10 @@ export function Logo({ className }: { className?: string }) {
                works most reliably across all browsers for this 'white on color' effect.
             */}
             <text
-                x="50%"
+                x="0"
                 y="55%"
                 dominantBaseline="middle"
-                textAnchor="middle"
+                textAnchor="start"
                 fontFamily="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
                 fontSize="28"
                 fontWeight="800"
@@ -114,10 +114,10 @@ export function Logo({ className }: { className?: string }) {
 
             {/* Fallback/Boost for Shine (Screen mode for max brightness without clipping) */}
             <text
-                x="50%"
+                x="0"
                 y="55%"
                 dominantBaseline="middle"
-                textAnchor="middle"
+                textAnchor="start"
                 fontFamily="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
                 fontSize="28"
                 fontWeight="800"

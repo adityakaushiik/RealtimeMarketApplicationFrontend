@@ -58,7 +58,7 @@ export function Header() {
 
     return (
         <header className="flex items-center justify-between px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-b bg-background w-full">
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-1 sm:gap-2">
                 <SidebarTrigger />
                 <Logo className="h-7 sm:h-8 lg:h-9 w-auto hidden sm:block text-foreground" />
             </div>
